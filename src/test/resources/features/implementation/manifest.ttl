@@ -1,0 +1,204 @@
+@prefix dc:     <http://purl.org/dc/elements/1.1/> .
+@prefix ex:     <http://example.org/> .
+@prefix foaf:   <http://xmlns.com/foaf/0.1/> .
+@prefix mf:     <http://www.w3.org/2001/sw/DataAccess/tests/test-manifest#> .
+@prefix rdf:    <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs:   <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix sh:     <http://www.w3.org/ns/shacl#> .
+@prefix sht:    <http://www.w3.org/ns/shacl/test-suite#> .
+@prefix xsd:    <http://www.w3.org/2001/XMLSchema#> .
+ 
+<>
+	a mf:Manifest ;
+	rdfs:comment "Tests of Core features" ;
+	rdfs:label "Core Features tests" ;
+	mf:entries (
+	    <test>
+#       <uniqueLang-001>
+		<reuse-001>
+#		<reuse-002>
+#		<inheritance-001>
+#		<inheritance-002>
+#		<inheritance-003>
+#		<inheritance-004>
+#		<duplication-001>
+	)
+.
+
+<test>
+	a sht:Validate ;
+	mf:name "Sandbox for tests" ;
+	mf:action [
+		sht:schema <test.ttl> ;
+		sht:data <test.ttl> ;
+	] ;
+	mf:status sht:proposed ;
+.
+
+
+<uniqueLang-001>
+	a sht:Validate ;
+	mf:name "Unique language properties" ;
+	mf:action [
+		sht:schema <uniqueLang-001.ttl> ;
+		sht:data <uniqueLang-001.ttl> ;
+	] ;
+	mf:result [
+	      a sh:ValidationResult ;
+          sh:focusNode  ex:InvalidShape11 ;
+          sh:predicate  ex:property1 ;
+          sh:severity   sh:Violation
+ 	] ;
+	mf:result [
+	      a sh:ValidationResult ;
+          sh:focusNode  ex:InvalidShape12 ;
+          sh:predicate  ex:property1 ;
+          sh:severity   sh:Violation ;
+          sh:subject  ex:InvalidShape12 ;
+
+ 	] ;
+	mf:status sht:proposed ;
+.
+
+
+<reuse-001>
+	a sht:Validate ;
+	mf:name "Test of property reuse" ;
+	mf:action [
+		sht:schema <reuse-001.ttl> ;
+		sht:data <reuse-001.ttl> ;
+	] ;
+ 	mf:result [
+ 	      a sh:ValidationResult ;
+          sh:focusNode  ex:InvalidShape1 ;
+          sh:severity   sh:Violation ;
+          sh:predicate  ex:property1 ;
+          sh:subject    ex:InvalidShape1
+    ] ;
+	mf:status sht:proposed ;
+.
+
+<reuse-002>
+	a sht:Validate ;
+	mf:name "Test of shape reuse" ;
+	mf:action [
+		sht:schema <reuse-002.ttl> ;
+		sht:data <reuse-002.ttl> ;
+	] ;
+	mf:result [
+	      a sh:ValidationResult ;
+          sh:focusNode  ex:InvalidShape2 ;
+          sh:severity   sh:Violation ;
+ 	] ;
+ 	mf:result [
+ 	      a sh:ValidationResult ;
+          sh:focusNode  ex:InvalidShape3 ;
+          sh:severity   sh:Violation
+    ] ;
+	mf:status sht:proposed ;
+.
+
+<inheritance-001>
+	a sht:Validate ;
+	mf:name "Test of shape inheritance" ;
+	mf:action [
+		sht:schema <inheritance-001.ttl> ;
+		sht:data <inheritance-001.ttl> ;
+	] ;
+	mf:result [
+	      a sh:ValidationResult ;
+          sh:focusNode  ex:InvalidShape2 ;
+          sh:predicate  ex:property1 ;
+          sh:severity   sh:Violation ;
+          sh:subject    ex:InvalidShape2
+ 	] ;
+	mf:status sht:proposed ;
+.
+
+
+<inheritance-002>
+	a sht:Validate ;
+	mf:name "Test of shape inheritance" ;
+	mf:action [
+		sht:schema <inheritance-002.ttl> ;
+		sht:data <inheritance-002.ttl> ;
+	] ;
+	mf:result [
+	      a sh:ValidationResult ;
+          sh:focusNode  ex:InvalidShape41 ;
+          sh:predicate  ex:property1 ;
+          sh:severity   sh:Violation ;
+          sh:subject    ex:InvalidShape41
+ 	] ;
+	mf:result [
+	      a sh:ValidationResult ;
+          sh:focusNode  ex:InvalidShape42 ;
+          sh:predicate  ex:property1 ;
+          sh:severity   sh:Violation ;
+          sh:subject    ex:InvalidShape42
+ 	] ;
+	mf:status sht:proposed ;
+.
+
+<inheritance-003>
+	a sht:Validate ;
+	mf:name "Test of data class inheritance" ;
+	mf:action [
+		sht:schema <inheritance-003.ttl> ;
+		sht:data <inheritance-003.ttl> ;
+	] ;
+	mf:result [
+	      a sh:ValidationResult ;
+          sh:focusNode  ex:InvalidShape1 ;
+          sh:predicate  ex:property1 ;
+          sh:severity   sh:Violation ;
+          sh:subject    ex:InvalidShape1
+ 	] ;
+	mf:status sht:proposed ;
+.
+
+<inheritance-004>
+	a sht:Validate ;
+	mf:name "Test of different shapes with same scope" ;
+	mf:action [
+		sht:schema <inheritance-004.ttl> ;
+		sht:data <inheritance-004.ttl> ;
+	] ;
+	mf:result [
+	      a sh:ValidationResult ;
+          sh:focusNode  ex:InvalidShape41 ;
+          sh:predicate  ex:property1 ;
+          sh:severity   sh:Violation ;
+          sh:subject    ex:InvalidShape41
+ 	] ;
+	mf:result [
+	      a sh:ValidationResult ;
+          sh:focusNode  ex:InvalidShape42 ;
+          sh:predicate  ex:property1 ;
+          sh:severity   sh:Violation ;
+          sh:subject    ex:InvalidShape42
+ 	] ;
+	mf:status sht:proposed ;
+.
+
+
+<duplication-001>
+	a sht:Validate ;
+	mf:name "Test of duplicate properties" ;
+	mf:action [
+		sht:schema <duplication-001.ttl> ;
+		sht:data <duplication-001.ttl> ;
+	] ;
+	mf:status sht:proposed ;
+.
+
+<melville>
+	a sht:Validate ;
+	mf:name "Test of Melville constraints" ;
+	mf:action [
+		sht:schema <Base-constraints.trig> ;
+		sht:data <Base-constraints.trig> ;
+	] ;
+	mf:status sht:proposed ;
+.
+

@@ -1,0 +1,50 @@
+# baseURI: http://www.w3.org/ns/shacl/test/features/core/and-001
+
+@prefix ex: <http://example.org/> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix sh: <http://www.w3.org/ns/shacl#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+<>
+	a sh:Graph ;
+	sh:shapesGraph <http://www.w3.org/ns/shacl> ;
+.
+
+
+# Shape Definitions -----------------------------------------------------------
+
+ex:Class1 a rdfs:Class .
+
+ex:Shape1
+	a sh:Shape, rdfs:Class ;
+	sh:property [
+	    sh:predicate ex:property1 ;
+	    sh:maxCount 1 ;
+	] .
+
+#Compare with reuse-002.ttl
+# This shape should inherit the maxCount from Shape1
+ex:Shape2
+	a sh:Shape, rdfs:Class ;
+	rdfs:subClassOf ex:Shape1 ;
+	sh:scopeClass ex:Class1 ;
+	sh:property [
+	    sh:predicate ex:property1 ;
+	    sh:minCount 1 ;
+	] .
+
+
+# Instances -------------------------------------------------------------------
+
+ex:ValidShape2
+	a ex:Class1 ;
+  	ex:property1 "fred" .
+
+ex:InvalidShape2
+	a ex:Class1 ;
+  	ex:property1 "fred" ;
+  	ex:property1 "barney" .
+
+
+ A solution based on subClassOf would require you to make Shape1 superclass of Class1 and attach the constraints of Shape2 to Class1.

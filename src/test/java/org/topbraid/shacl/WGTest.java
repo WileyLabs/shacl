@@ -2,10 +2,13 @@ package org.topbraid.shacl;
 
 import java.io.InputStream;
 import java.net.URI;
+import java.util.logging.Logger;
 
+import com.sun.corba.se.impl.presentation.rmi.ExceptionHandler;
 import junit.framework.Test;
 import junit.framework.TestSuite;
 
+import org.apache.log4j.BasicConfigurator;
 import org.topbraid.shacl.constraints.FailureLog;
 import org.topbraid.spin.util.JenaUtil;
 
@@ -21,7 +24,9 @@ import org.apache.jena.vocabulary.RDF;
 public class WGTest extends TestSuite {
 	
 	public WGTest() throws Exception {
+//		BasicConfigurator.configure();
 		String baseURI = getClass().getResource("/manifest.ttl").toURI().toString();
+//		String baseURI = getClass().getResource("/features/implementation/manifest.ttl").toURI().toString();
 		collectTestCases(baseURI);
 	}
 	
@@ -60,6 +65,7 @@ public class WGTest extends TestSuite {
 				for(RDFNode member : list.as(RDFList.class).asJavaList()) {
 					if(!member.isLiteral()) {
 						Resource test = (Resource) member;
+						System.out.println("Processing test file " + test.getLocalName());
 						if(test.hasProperty(RDF.type, SHT.MatchNodeShape)) {
 							addTestIfSupported(new MatchNodeTestClass(test));
 						}

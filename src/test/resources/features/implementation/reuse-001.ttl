@@ -1,0 +1,41 @@
+# baseURI: http://www.w3.org/ns/shacl/test/features/core/and-001
+
+@prefix ex: <http://example.org/> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix sh: <http://www.w3.org/ns/shacl#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+<>
+	a sh:Graph ;
+	sh:shapesGraph <http://www.w3.org/ns/shacl> ;
+.
+
+
+# Shape Definitions -----------------------------------------------------------
+
+# This should be a trivial application of an explicit URL
+ex:property1Property a sh:PropertyConstraint ;
+    sh:minCount 1 ;
+    sh:maxCount 1 ;
+    sh:predicate ex:property1 .
+
+ex:Shape1
+	a sh:Shape ;
+	sh:scopeClass ex:Class1 ;
+	sh:property ex:property1Property .
+
+ex:Class1 a rdfs:Class .
+
+# Instances -------------------------------------------------------------------
+
+
+ex:ValidShape1
+	a ex:Class1 ;
+  	ex:property1 "fred" ;
+.
+
+ex:InvalidShape1
+	a ex:Class1 ;
+  	ex:property1 "fred" ;
+  	ex:property1 "barney" .

@@ -16,4 +16,5 @@
 	rdfs:label "Tests of specific SHACL features" ;
 	mf:include <core/manifest.ttl> ;
 	mf:include <sparql/manifest.ttl> ;
+	mf:include <implementation/manifest.ttl>
 .

@@ -1,0 +1,69 @@
+# baseURI: http://www.w3.org/ns/shacl/test/features/core/and-001
+
+@prefix ex: <http://example.org/> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix sh: <http://www.w3.org/ns/shacl#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+<>
+	a sh:Graph ;
+	sh:shapesGraph <http://www.w3.org/ns/shacl> ;
+.
+
+
+# Shape Definitions -----------------------------------------------------------
+
+# Shape1 is scope-neutral, so can be applied to many different shapes
+ex:Shape1
+	a sh:Shape ;
+	sh:property [
+	    sh:predicate ex:property1 ;
+	    sh:maxCount 1 ;
+	] .
+
+ex:Class2 a rdfs:Class .
+
+# This is equivalent to using rdfs:subClassOf (see inheritance.ttl), but without requiring it - more SHACL-native
+# Could use and or or equivalently here, a bit obscure
+ex:Shape2
+	a sh:Shape ;
+	sh:scopeClass ex:Class2 ;
+	sh:constraint [
+	    sh:and (ex:Shape1)
+	] .
+
+ex:Class3 a rdfs:Class .
+
+# Would be more elegant to be able to just use sh:shape
+ex:Shape3
+	a sh:Shape ;
+	sh:scopeClass ex:Class3 ;
+	sh:shape ex:Shape1 .
+
+# Would also be more elegant if sh:shape supported both singletons and lists for multiple inheritance
+# ex:Shape4
+#	a sh:Shape
+#	sh:shape (ex:Shape1, ex:Shape4) .
+
+
+# Instances -------------------------------------------------------------------
+
+
+# by applying Shape1 to Shape2, Shape2 should inherit Shape1's constraints, so maxCount should be 1
+ex:ValidShape2
+	a ex:Class2 ;
+  	ex:property1 "fred" .
+
+# by applying Shape1 to Shape2, Shape2 should inherit Shape1's constraints, so maxCount should be 1
+ex:InvalidShape2
+	a ex:Class2 ;
+  	ex:property1 "fred" ;
+  	ex:property1 "barney" .
+
+# Shape3 reuses property1 from Shape1, so maxCount should be 1
+ex:InvalidShape3
+	a ex:Class3 ;
+  	ex:property1 "fred" ;
+  	ex:property1 "barney" .
+

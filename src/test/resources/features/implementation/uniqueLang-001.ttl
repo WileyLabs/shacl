@@ -1,0 +1,77 @@
+# baseURI: http://www.w3.org/ns/shacl/test/features/core/and-001
+
+@prefix ex: <http://example.org/> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix sh: <http://www.w3.org/ns/shacl#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+<>
+	a sh:Graph ;
+	sh:shapesGraph <http://www.w3.org/ns/shacl> ;
+.
+
+
+# Shape Definitions -----------------------------------------------------------
+
+ex:Class1 a rdfs:Class .
+ex:Class2 a rdfs:Class .
+
+ex:Shape1
+	a sh:Shape ;
+	sh:scopeClass ex:Class1 ;
+	sh:property [
+	    a sh:PropertyConstraint ;
+     	sh:uniqueLang true ;
+     	sh:predicate ex:property1
+    ]
+	 .
+
+ex:Shape2
+    a sh:Shape ;
+    sh:scopeClass ex:Class2 ;
+    sh:constraint [
+       sh:or (
+        [
+            sh:property [
+                a sh:PropertyConstraint ;
+                sh:uniqueLang true ;
+                sh:predicate ex:property1 ;
+                sh:datatype rdf:langString
+            ]
+        ]
+        [
+            sh:property [
+                a sh:PropertyConstraint ;
+                sh:maxOccurs 1 ;
+                sh:predicate ex:property1 ;
+                sh:datatype xsd:string
+            ]
+        ]
+       )
+    ] .
+
+
+# Instances -------------------------------------------------------------------
+
+ex:ValidShape11
+    a ex:Class1
+.
+
+ex:ValidShape12
+	a ex:Class1 ;
+  	ex:property1 "fred"@en ;
+  	ex:property1 "fréderique"@fr .
+
+ex:InvalidShape11
+	a ex:Class1 ;
+  	ex:property1 "fred"@en ;
+  	ex:property1 "barney"@en .
+
+#I would expect this to fail. If this were being processed by localization-aware software, this would be interpreted as the fallback if the language is unspecified by the client or unavailable from the datastore.
+#The SHACL processor has no way of knowing which language is the default, but it should know that there should not be two defaults.
+#You cannot add minCount/maxCount on top of uniqueLang, as that would create conflicting behavior
+ex:InvalidShape12
+	a ex:Class2 ;
+  	ex:property1 "fred" ;
+  	ex:property1 "barney" .

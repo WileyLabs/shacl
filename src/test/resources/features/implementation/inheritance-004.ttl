@@ -1,0 +1,56 @@
+# baseURI: http://www.w3.org/ns/shacl/test/features/core/and-001
+
+@prefix ex: <http://example.org/> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix sh: <http://www.w3.org/ns/shacl#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+<>
+	a sh:Graph ;
+	sh:shapesGraph <http://www.w3.org/ns/shacl> ;
+.
+
+
+# Shape Definitions -----------------------------------------------------------
+
+ex:Class1 a rdfs:Class .
+
+# Different shapes, same scope, should be intersection of constraints
+ex:Shape3
+	a sh:Shape ;
+	sh:scopeClass ex:Class1 ;
+	sh:property [
+	    sh:predicate ex:property1 ;
+	    sh:minCount 2 ;
+	    sh:maxCount 2 ;
+	] .
+
+# Shape4 is looser than Shape3, so should have no effect
+ex:Shape4
+	a sh:Shape ;
+	sh:scopeClass ex:Class1 ;
+	sh:property [
+	    sh:predicate ex:property1 ;
+	    sh:minCount 1 ;
+	    sh:maxCount 4 ;
+	] .
+
+
+# Instances -------------------------------------------------------------------
+
+
+ex:ValidShape4
+    a ex:Class1 ;
+    ex:property1 "fred" ;
+    ex:property1 "barney" .
+
+ex:InvalidShape41
+    a ex:Class1 ;
+    ex:property1 "fred" ;
+    ex:property1 "barney" ;
+    ex:property1 "wilma" .
+
+ex:InvalidShape42
+    a ex:Class1 ;
+    ex:property1 "fred" .

@@ -1,0 +1,60 @@
+# baseURI: http://www.w3.org/ns/shacl/test/features/core/and-001
+
+@prefix ex: <http://example.org/> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix sh: <http://www.w3.org/ns/shacl#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+<>
+	a sh:Graph ;
+	sh:shapesGraph <http://www.w3.org/ns/shacl> ;
+.
+
+
+# Shape Definitions -----------------------------------------------------------
+
+ex:Class1 a rdfs:Class .
+
+# When shapes inherit from each other and the definitions overlap, this can create confusing results
+ex:Shape3
+	a rdfs:Class, sh:Shape ;
+	sh:property [
+	    sh:predicate ex:property1 ;
+	    sh:minCount 2 ;
+	    sh:maxCount 2 ;
+	] .
+# If we were talking OOP, Shape4's definition would override Shape3's. However, here the result of this should
+# be two property constraints ANDed on the same predicate.
+# If the constraints are taken as peers, then the resulting constraint must be their intersection, i.e. 2
+# This does make inheritance confusing, though it is consistent with the set-based ontology approach
+# It would be nice if we could establish an overriding behavior, e.g. sh:overrides ([ sh:property ...])
+ex:Shape4
+	a rdfs:Class, sh:Shape ;
+	rdfs:subClassOf ex:Shape3 ;
+	sh:scopeClass ex:Class ;
+	sh:property [
+	    sh:predicate ex:property1 ;
+	    sh:minCount 1 ;
+	    sh:maxCount 4 ;
+	] .
+
+# Compare this with inheritance-004 - behavior should be the same but isn't?
+
+# Instances -------------------------------------------------------------------
+
+
+ex:ValidShape4
+    a ex:Class1 ;
+    ex:property1 "fred" ;
+    ex:property1 "barney" .
+
+ex:InvalidShape41
+    a ex:Class1 ;
+    ex:property1 "fred" ;
+    ex:property1 "barney" ;
+    ex:property1 "wilma" .
+
+ex:InvalidShape42
+    a ex:Class1 ;
+    ex:property1 "fred" .
