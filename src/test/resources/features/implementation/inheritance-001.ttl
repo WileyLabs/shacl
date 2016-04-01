@@ -47,4 +47,4 @@ ex:InvalidShape2
   	ex:property1 "barney" .
 
 
- A solution based on subClassOf would require you to make Shape1 superclass of Class1 and attach the constraints of Shape2 to Class1.
+# A solution based on subClassOf would require you to make Shape1 superclass of Class1 and attach the constraints of Shape2 to Class1.

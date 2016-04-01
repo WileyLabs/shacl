@@ -6,6 +6,7 @@ import java.util.UUID;
 
 import org.topbraid.shacl.arq.SHACLFunctions;
 import org.topbraid.shacl.constraints.ModelConstraintValidator;
+import org.topbraid.shacl.util.ModelPrinter;
 import org.topbraid.shacl.util.SHACLUtil;
 import org.topbraid.shacl.vocabulary.SH;
 import org.topbraid.spin.arq.ARQFactory;
@@ -62,7 +63,7 @@ public class ValidateSquareExampleTest extends TestCase {
 		Model results = ModelConstraintValidator.get().validateModel(dataset, shapesGraphURI, null, filtered, null);
 		
 		// Uncomment following line to see the validation results
-		// System.out.println(ModelPrinter.get().print(results));
+		System.out.println(ModelPrinter.get().print(results));
 		
 		// Expecting 2 constraint violations (9 triples each)
 		assertEquals(18, results.size());
