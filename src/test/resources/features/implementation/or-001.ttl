@@ -1,0 +1,69 @@
+@prefix ex: <http://example.org/> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix sh: <http://www.w3.org/ns/shacl#> .
+@prefix shacl: <http://www.w3.org/ns/shacl#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+
+<>
+	a sh:Graph ;
+	sh:shapesGraph <http://www.w3.org/ns/shacl> ;
+.
+
+
+# Shape Definitions -----------------------------------------------------------
+
+
+ex:Shape1 a sh:Shape, rdfs:Class ;
+    sh:constraint ex:or1 .
+
+ex:or1 sh:or (
+        ex:b0
+        ex:b1
+		) .
+
+ex:Shape2 a shacl:Shape, rdfs:Class ;
+	sh:constraint [
+		sh:or (
+        ex:b0
+        ex:b1
+		)
+	] .
+
+ex:b0 a sh:Shape ;
+    sh:property [
+        sh:predicate ex:property1 ;
+        sh:valueShape ex:b3 ;
+        sh:minCount 1
+    ] .
+
+ex:b1 a sh:Shape ;
+    sh:property [
+        sh:predicate ex:property2 ;
+        sh:valueShape ex:b3 ;
+        sh:minCount 1
+    ] .
+
+ex:b3 a sh:Shape ;
+    sh:property [
+        sh:predicate ex:property3 ;
+        sh:minCount 1
+    ] .
+
+
+# Instances -------------------------------------------------------------------
+
+
+ex:ValidShape1 a ex:Shape1 ;
+  	ex:property1 [ ex:property3 "fred" ] .
+
+ex:ValidShape2 a ex:Shape2 ;
+    ex:property1 [ ex:property3 "fred" ] .
+
+# This one should not break if the bug is really there. It doesn't, means it's something else?
+ex:InvalidShape1 a ex:Shape1 ;
+    ex:property2 [ ex:property4 "fred" ] .
+
+ex:InvalidShape2 a ex:Shape2 .
+

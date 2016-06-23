@@ -13,9 +13,10 @@
 	rdfs:comment "Tests of Core features" ;
 	rdfs:label "Core Features tests" ;
 	mf:entries (
-	    <test>
+#	    <test>
+	    <or-001>
 #       <uniqueLang-001>
-		<reuse-001>
+#		<reuse-001>
 #		<reuse-002>
 #		<inheritance-001>
 #		<inheritance-002>
@@ -35,6 +36,25 @@
 	mf:status sht:proposed ;
 .
 
+<or-001>
+	a sht:Validate ;
+	mf:name "Bug in OR constraints - seems not to work with named constraints" ;
+	mf:action [
+		sht:schema <or-001.ttl> ;
+		sht:data <or-001.ttl> ;
+	] ;
+	mf:status sht:proposed ;
+    mf:result [
+                a sh:ValidationResult ;
+                sh:focusNode ex:InvalidShape1 ;
+                sh:severity sh:Violation ;
+              ] ;
+	mf:result [
+		        a sh:ValidationResult ;
+	            sh:focusNode ex:InvalidShape2 ;
+                sh:severity sh:Violation ;
+              ] ;
+.
 
 <uniqueLang-001>
 	a sht:Validate ;
