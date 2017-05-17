@@ -3,6 +3,7 @@
 # SHACL - Shapes Constraint Language
 # Draft last edited on 2016-01-11
 # Editor: Holger Knublauch <holger@topquadrant.com>
+# Local changes by Patrick Johnston (PJ) to match evolving standard - marked #PJ:YYYY-MM-DD
 
 @prefix owl: <http://www.w3.org/2002/07/owl#> .
 @prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
@@ -112,7 +113,7 @@ sh:NodeKind
 	rdfs:label "Node kind" ;
 	rdfs:comment "The class of RDF node kinds: blank nodes, IRIs and literals." ;
 	sh:constraint [
-		sh:in ( sh:BlankNode sh:IRI sh:Literal ) ;
+		sh:in ( sh:BlankNode sh:IRI sh:Literal sh:BlankNodeOrIRI) ;
 	] ;
 .
 
@@ -132,6 +133,12 @@ sh:Literal
 	a sh:NodeKind ;
 	rdfs:label "Literal" ;
 	rdfs:comment "The node kind of all literals.";
+.
+
+sh:BlankNodeOrIRI
+	a sh:NodeKind ;
+	rdfs:label "Literal" ;
+	rdfs:comment "The node kind of all blank nodes and IRIs.";
 .
 
 
@@ -2203,7 +2210,8 @@ sh:hasNodeKind
 		ASK {
 			FILTER ((isIRI($value) && $nodeKind = sh:IRI) ||
 				(isLiteral($value) && $nodeKind = sh:Literal) ||
-				(isBlank($value) && $nodeKind = sh:BlankNode)) .
+				(isBlank($value) && $nodeKind = sh:BlankNode) || #PJ:2017-05-17
+				((isBlank($value) || isIRI($value)) && $nodeKind = sh:BlankNodeOrIRI)) . #PJ:2017-05-17
 		}
 		""" ;
 .
