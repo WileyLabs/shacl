@@ -113,7 +113,7 @@ sh:NodeKind
 	rdfs:label "Node kind" ;
 	rdfs:comment "The class of RDF node kinds: blank nodes, IRIs and literals." ;
 	sh:constraint [
-		sh:in ( sh:BlankNode sh:IRI sh:Literal sh:BlankNodeOrIRI) ;
+		sh:in ( sh:BlankNode sh:IRI sh:Literal sh:BlankNodeOrIRI sh:BlankNodeOrLiteral) ; #PJ:2017-05-17 #PJ:2017-06-17
 	] ;
 .
 
@@ -135,10 +135,18 @@ sh:Literal
 	rdfs:comment "The node kind of all literals.";
 .
 
+#PJ:2017-05-17
 sh:BlankNodeOrIRI
 	a sh:NodeKind ;
-	rdfs:label "Literal" ;
+	rdfs:label "Blank node or IRI" ;
 	rdfs:comment "The node kind of all blank nodes and IRIs.";
+.
+
+#PJ:2017-06-17
+sh:BlankNodeOrLiteral
+	a sh:NodeKind ;
+	rdfs:label "Blank node or literal" ;
+	rdfs:comment "The node kind of all blank nodes and literals.";
 .
 
 
@@ -2211,7 +2219,8 @@ sh:hasNodeKind
 			FILTER ((isIRI($value) && $nodeKind = sh:IRI) ||
 				(isLiteral($value) && $nodeKind = sh:Literal) ||
 				(isBlank($value) && $nodeKind = sh:BlankNode) || #PJ:2017-05-17
-				((isBlank($value) || isIRI($value)) && $nodeKind = sh:BlankNodeOrIRI)) . #PJ:2017-05-17
+				((isBlank($value) || isIRI($value)) && $nodeKind = sh:BlankNodeOrIRI) || #PJ:2017-05-17
+				((isBlank($value) || isLiteral($value)) && $nodeKind = sh:BlankNodeOrLiteral)) . #PJ:2017-06-17
 		}
 		""" ;
 .
