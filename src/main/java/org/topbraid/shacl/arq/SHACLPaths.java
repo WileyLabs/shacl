@@ -24,11 +24,9 @@ import java.util.Set;
 
 import org.apache.jena.graph.Node;
 import org.apache.jena.query.Query;
-import org.apache.jena.query.QueryExecution;
 import org.apache.jena.query.QueryParseException;
-import org.apache.jena.query.QuerySolutionMap;
-import org.apache.jena.query.ResultSet;
 import org.apache.jena.rdf.model.Model;
+import org.apache.jena.rdf.model.Property;
 import org.apache.jena.rdf.model.RDFList;
 import org.apache.jena.rdf.model.RDFNode;
 import org.apache.jena.rdf.model.Resource;
@@ -82,27 +80,11 @@ public class SHACLPaths {
 	}
 	
 	
-	public static void addValueNodes(RDFNode focusNode, Resource path, Collection<RDFNode> results) {
-		if(path.isURIResource()) {
-			if(focusNode instanceof Resource) {
-				StmtIterator it = focusNode.getModel().listStatements((Resource)focusNode, JenaUtil.asProperty(path), (RDFNode)null);
-				while(it.hasNext()) {
-					results.add(it.next().getObject());
-				}
-			}
-		}
-		else {
-			String pathString = SHACLPaths.getPathString(path);
-			String queryString = "SELECT DISTINCT ?value { $this " + pathString + " ?value }";
-			Query query = ARQFactory.get().createQuery(path.getModel(), queryString);
-			try(QueryExecution qexec = ARQFactory.get().createQueryExecution(query, focusNode.getModel())) {
-				QuerySolutionMap qs = new QuerySolutionMap();
-				qs.add("this", focusNode);
-				qexec.setInitialBinding(qs);
-				ResultSet rs = qexec.execSelect();
-				while(rs.hasNext()) {
-					results.add(rs.next().get("value"));
-				}
+	public static void addValueNodes(RDFNode focusNode, Property predicate, Collection<RDFNode> results) {
+		if(focusNode instanceof Resource) {
+			StmtIterator it = ((Resource)focusNode).listProperties(predicate);
+			while(it.hasNext()) {
+				results.add(it.next().getObject());
 			}
 		}
 	}
@@ -250,6 +232,17 @@ public class SHACLPaths {
 			throw new IllegalArgumentException("Path element not supported by SHACL syntax: " + path);
 		}
 	}
+	
+	
+	public static Object getJenaPath(Resource path) throws QueryParseException {
+		if(path.isURIResource()) {
+			return path;
+		}
+		else {
+			String pathString = SHACLPaths.getPathString(path);
+			return SHACLPaths.getJenaPath(pathString, path.getModel());
+		}
+	}
 
 	
 	/**
@@ -265,7 +258,13 @@ public class SHACLPaths {
 		if(element instanceof ElementGroup) {
 			Element e = ((ElementGroup)element).getElements().get(0);
 			if(e instanceof ElementPathBlock) {
-				return ((ElementPathBlock) e).getPattern().get(0).getPath();
+				Path path = ((ElementPathBlock) e).getPattern().get(0).getPath();
+				if(path instanceof P_Link && ((P_Link)path).isForward()) {
+					return model.asRDFNode(((P_Link)path).getNode());
+				}
+				else {
+					return path;
+				}
 			}
 			else if(e instanceof ElementTriplesBlock) {
 				return model.asRDFNode(((ElementTriplesBlock) e).getPattern().get(0).getPredicate());

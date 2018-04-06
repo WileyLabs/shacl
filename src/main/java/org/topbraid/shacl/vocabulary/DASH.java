@@ -42,11 +42,15 @@ public class DASH {
 
     public final static Resource FunctionTestCase = ResourceFactory.createResource(NS + "FunctionTestCase");
 
+    public final static Resource GraphStoreTestCase = ResourceFactory.createResource(NS + "GraphStoreTestCase");
+
     public final static Resource GraphUpdate = ResourceFactory.createResource(NS + "GraphUpdate");
 
     public final static Resource GraphValidationTestCase = ResourceFactory.createResource(NS + "GraphValidationTestCase");
 
     public final static Resource InferencingTestCase = ResourceFactory.createResource(NS + "InferencingTestCase");
+
+    public final static Resource isDeactivated = ResourceFactory.createResource(NS + "isDeactivated");
 
     public final static Resource JSTestCase = ResourceFactory.createResource(NS + "JSTestCase");
 
@@ -77,6 +81,8 @@ public class DASH {
     
     public final static Property addedTriple = ResourceFactory.createProperty(NS + "addedTriple");
 
+    public final static Property applicableToClass = ResourceFactory.createProperty(NS + "applicableToClass");
+
     public final static Property cachable = ResourceFactory.createProperty(NS + "cachable");
 
     public final static Property composite = ResourceFactory.createProperty(NS + "composite");
@@ -100,6 +106,8 @@ public class DASH {
     public final static Property propertySuggestionGenerator = ResourceFactory.createProperty(NS + "propertySuggestionGenerator");
 
     public final static Property rootClass = ResourceFactory.createProperty(NS + "rootClass");
+
+    public final static Property shape = ResourceFactory.createProperty(NS + "shape");
     
     public final static Property suggestion = ResourceFactory.createProperty(NS + "suggestion");
     
@@ -116,6 +124,10 @@ public class DASH {
     public final static Property testGraph = ResourceFactory.createProperty(NS + "testGraph");
     
     public final static Property testModifiesEnvironment = ResourceFactory.createProperty(NS + "testModifiesEnvironment");
+    
+    public final static Property uri = ResourceFactory.createProperty(NS + "uri");
+    
+    public final static Property uriStart = ResourceFactory.createProperty(NS + "uriStart");
     
     public final static Property validateShapes = ResourceFactory.createProperty(NS + "validateShapes");
     
