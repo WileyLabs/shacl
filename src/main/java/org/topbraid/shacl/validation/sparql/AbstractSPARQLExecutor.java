@@ -53,9 +53,6 @@ import org.topbraid.shacl.vocabulary.SH;
 
 public abstract class AbstractSPARQLExecutor implements ConstraintExecutor {
 	
-	// Flag to generate sh:details for all violations.
-	public static boolean createDetails = false;
-	
 	// Flag to generate dash:SuccessResults for all violations.
 	public static boolean createSuccessResults = false;
 	
@@ -68,6 +65,11 @@ public abstract class AbstractSPARQLExecutor implements ConstraintExecutor {
 		this.queryString = getSPARQL(constraint);
 		try {
 			this.query = ARQFactory.get().createQuery(queryString);
+			Resource path = constraint.getShapeResource().getPath();
+			if(path != null && path.isAnon()) {
+				String pathString = SHACLPaths.getPathString(JenaUtil.getResourceProperty(constraint.getShapeResource(), SH.path));
+				query = SPARQLSubstitutions.substitutePaths(query, pathString, constraint.getShapeResource().getModel());
+			}
 		}
 		catch(QueryParseException ex) {
 			throw new SHACLException("Invalid SPARQL constraint (" + ex.getLocalizedMessage() + "):\n" + queryString);
@@ -88,14 +90,8 @@ public abstract class AbstractSPARQLExecutor implements ConstraintExecutor {
 		bindings.add(SH.shapesGraphVar.getVarName(), ResourceFactory.createResource(engine.getShapesGraphURI().toString()));
 		
 		Resource path = constraint.getShapeResource().getPath();
-		if(path != null) {
-			if(path.isAnon()) {
-				String pathString = SHACLPaths.getPathString(JenaUtil.getResourceProperty(constraint.getShapeResource(), SH.path));
-				query = SPARQLSubstitutions.substitutePaths(query, pathString, constraint.getShapeResource().getModel());
-			}
-			else {
-				bindings.add(SH.PATHVar.getName(), path);
-			}
+		if(path != null && path.isURIResource()) {
+			bindings.add(SH.PATHVar.getName(), path);
 		}
 		
 		URI oldShapesGraphURI = HasShapeFunction.getShapesGraphURI();
@@ -115,6 +111,7 @@ public abstract class AbstractSPARQLExecutor implements ConstraintExecutor {
 				bindings.add(SH.thisVar.getVarName(), focusNode); // Overwrite any previous binding
 				QueryExecution qexec = SPARQLSubstitutions.createQueryExecution(query, engine.getDataset(), bindings);
 				executeSelectQuery(engine, constraint, messageHolder, nestedResults, focusNode, qexec, bindings);
+				engine.checkCanceled();
 			}			
 			if(ExecStatisticsManager.get().isRecording()) {
 				long endTime = System.currentTimeMillis();
@@ -225,7 +222,7 @@ public abstract class AbstractSPARQLExecutor implements ConstraintExecutor {
 							result.addProperty(SH.value, focusNode);
 						}
 						
-						if(createDetails) {
+						if(engine.getConfiguration().getReportDetails()) {
 							addDetails(result, nestedResults);
 						}
 					}
@@ -236,7 +233,7 @@ public abstract class AbstractSPARQLExecutor implements ConstraintExecutor {
 				if(SH.SPARQLConstraintComponent.equals(constraint.getComponent())) {
 					success.addProperty(SH.sourceConstraint, constraint.getParameterValue());
 				}
-				if(createDetails) {
+				if(engine.getConfiguration().getReportDetails()) {
 					addDetails(success, nestedResults);
 				}
 			}

@@ -69,6 +69,8 @@ public class SH {
 
     public final static Resource MinLengthConstraintComponent = ResourceFactory.createResource(NS + "MinLengthConstraintComponent");
 
+    public final static Resource NodeConstraintComponent = ResourceFactory.createResource(NS + "NodeConstraintComponent");
+
     public final static Resource NodeKindConstraintComponent = ResourceFactory.createResource(NS + "NodeKindConstraintComponent");
 
     public final static Resource NodeShape = ResourceFactory.createResource(NS + "NodeShape");
@@ -341,6 +343,35 @@ public class SH {
     public final static Property target = ResourceFactory.createProperty(NS + "target");
     
     public final static Property union = ResourceFactory.createProperty(NS + "union");
+
+    
+    // Features not in SHACL 1.0 but candidates for next release
+    
+	public final static Property count = ResourceFactory.createProperty(NS + "count");
+    
+	public final static Property desc = ResourceFactory.createProperty(NS + "desc");
+    
+	public final static Property distinct = ResourceFactory.createProperty(NS + "distinct");
+	
+	public final static Property groupConcat = ResourceFactory.createProperty(NS + "groupConcat");
+    
+	public final static Property limit = ResourceFactory.createProperty(NS + "limit");
+    
+	public final static Property max = ResourceFactory.createProperty(NS + "max");
+    
+	public final static Property min = ResourceFactory.createProperty(NS + "min");
+    
+	public final static Property minus = ResourceFactory.createProperty(NS + "minus");
+    
+	public final static Property offset = ResourceFactory.createProperty(NS + "offset");
+    
+	public final static Property orderBy = ResourceFactory.createProperty(NS + "orderBy");
+    
+	public final static Property separator = ResourceFactory.createProperty(NS + "separator");
+    
+	public final static Property sum = ResourceFactory.createProperty(NS + "sum");
+    
+	public final static Property values = ResourceFactory.createProperty(NS + "values");
 
 
 	

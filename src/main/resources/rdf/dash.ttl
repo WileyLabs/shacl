@@ -167,9 +167,13 @@ dash:DASHJSLibrary
 .
 dash:DateOrDateTime
   rdf:type rdf:List ;
-  rdf:first xsd:date ;
+  rdf:first [
+      sh:datatype xsd:date ;
+    ] ;
   rdf:rest (
-      xsd:dateTime
+      [
+        sh:datatype xsd:dateTime ;
+      ]
     ) ;
   rdfs:comment "An rdf:List that can be used in property constraints as value for sh:or to indicate that all values of a property must be either xsd:date or xsd:dateTime." ;
   rdfs:label "Date or date time" ;
@@ -192,6 +196,12 @@ dash:DefaultValueTypeRule
 			FILTER (NOT EXISTS { ?node a ?anyType }) .
 		}
 		""" ;
+.
+dash:ExecutionPlatform
+  rdf:type rdfs:Class ;
+  rdfs:comment "An platform (such as TopBraid) that may have features needed to execute, for example, SPARQL queries." ;
+  rdfs:label "Execution platform" ;
+  rdfs:subClassOf rdfs:Resource ;
 .
 dash:FailureResult
   rdf:type rdfs:Class ;
@@ -224,6 +234,30 @@ dash:FunctionTestCase
       sh:name "expression" ;
     ] ;
 .
+dash:GraphStoreTestCase
+  rdf:type rdfs:Class ;
+  rdf:type sh:NodeShape ;
+  rdfs:comment "A test case that can be used to verify that an RDF file could be loaded (from a file) and that the resulting RDF graph is equivalent to a given TTL file." ;
+  rdfs:label "Graph store test case" ;
+  rdfs:subClassOf dash:TestCase ;
+  sh:property [
+      rdf:type sh:PropertyShape ;
+      sh:path dash:expectedResult ;
+      sh:datatype xsd:string ;
+      sh:description "The expected RDF graph, as a Turtle string." ;
+      sh:maxCount 1 ;
+      sh:minCount 1 ;
+    ] ;
+  sh:property [
+      rdf:type sh:PropertyShape ;
+      sh:path dash:uri ;
+      sh:datatype xsd:anyURI ;
+      sh:description "The URI of the graph to load." ;
+      sh:maxCount 1 ;
+      sh:minCount 1 ;
+      sh:name "uri" ;
+    ] ;
+.
 dash:GraphUpdate
   rdf:type rdfs:Class ;
   rdfs:comment "A suggestion consisting of added and/or deleted triples, represented as rdf:Statements via dash:addedTriple and dash:deletedTriple." ;
@@ -236,11 +270,27 @@ dash:GraphValidationTestCase
   rdfs:label "Graph validation test case" ;
   rdfs:subClassOf dash:ValidationTestCase ;
 .
+dash:HTMLOrStringOrLangString
+  rdf:type rdf:List ;
+  rdf:first [
+      sh:datatype rdf:HTML ;
+    ] ;
+  rdf:rest (
+      [
+        sh:datatype xsd:string ;
+      ]
+      [
+        sh:datatype rdf:langString ;
+      ]
+    ) ;
+  rdfs:comment "An rdf:List that can be used in property constraints as value for sh:or to indicate that all values of a property must be either rdf:HTML, xsd:string or rdf:langString." ;
+  rdfs:label "HTML or string or langString" ;
+.
 dash:HasValueWithClassConstraintComponent
   rdf:type sh:ConstraintComponent ;
   rdfs:comment "A constraint component that can be used to express a constraint on property shapes so that one of the values of the property path must be an instance of a given class." ;
   rdfs:label "Has value with class constraint component" ;
-  sh:message "At least one of the values must have class {$hasValueWithClass}" ;
+  sh:message "At least one of the values must be an instance of class {$hasValueWithClass}" ;
   sh:parameter dash:HasValueWithClassConstraintComponent-hasValueWithClass ;
   sh:propertyValidator [
       rdf:type sh:JSValidator ;
@@ -453,7 +503,8 @@ dash:PrimaryKeyConstraintComponent-uriStart
   rdf:type sh:Parameter ;
   sh:path dash:uriStart ;
   sh:datatype xsd:string ;
-  sh:description "The start of the URIs of well-formed resources." ;
+  sh:description "The start of the URIs of well-formed resources. If specified then the associated property/path serves as \"primary key\" for all target nodes (instances). All such target nodes need to have a URI that starts with the given string, followed by the URI-encoded value of the primary key property." ;
+  sh:group tosh:PrimaryKeyPropertyGroup ;
   sh:name "URI start" ;
 .
 dash:QueryTestCase
@@ -541,9 +592,13 @@ dash:StemConstraintComponent-stem
 .
 dash:StringOrLangString
   rdf:type rdf:List ;
-  rdf:first xsd:string ;
+  rdf:first [
+      sh:datatype xsd:string ;
+    ] ;
   rdf:rest (
-      rdf:langString
+      [
+        sh:datatype rdf:langString ;
+      ]
     ) ;
   rdfs:comment "An rdf:List that can be used in property constraints as value for sh:or to indicate that all values of a property must be either xsd:string or rdf:langString." ;
   rdfs:label "String or langString" ;
@@ -607,6 +662,36 @@ dash:SuggestionResult
   rdfs:label "Suggestion result" ;
   rdfs:subClassOf sh:AbstractResult ;
 .
+dash:SymmetricConstraintComponent
+  rdf:type sh:ConstraintComponent ;
+  rdfs:comment "A contraint component for property shapes to validate that a property is symmetric. For symmetric properties, if A relates to B then B must relate to A." ;
+  rdfs:label "Symmetric constraint component" ;
+  sh:message "Symmetric value expected" ;
+  sh:parameter dash:SymmetricConstraintComponent-symmetric ;
+  sh:propertyValidator [
+      rdf:type sh:JSValidator ;
+      sh:jsFunctionName "validateSymmetric" ;
+      sh:jsLibrary dash:DASHJSLibrary ;
+    ] ;
+  sh:propertyValidator [
+      rdf:type sh:SPARQLSelectValidator ;
+      sh:prefixes <http://datashapes.org/dash> ;
+      sh:select """SELECT $this ?value {
+	FILTER ($symmetric) .
+	$this $PATH ?value .
+	FILTER NOT EXISTS {
+    	$value $PATH $this .
+	}
+}""" ;
+    ] ;
+  sh:targetClass sh:PropertyShape ;
+.
+dash:SymmetricConstraintComponent-symmetric
+  rdf:type sh:Parameter ;
+  sh:path dash:symmetric ;
+  sh:datatype xsd:boolean ;
+  sh:group tosh:RelationshipPropertyGroup ;
+.
 dash:TestCase
   rdf:type rdfs:Class ;
   dash:abstract "true"^^xsd:boolean ;
@@ -644,6 +729,42 @@ dash:TestEnvironment
   rdfs:comment "Abstract base class for test environments, holding information on how to set up a test case." ;
   rdfs:label "Test environment" ;
   rdfs:subClassOf rdfs:Resource ;
+.
+dash:UniqueValueForClassConstraintComponent
+  rdf:type sh:ConstraintComponent ;
+  dash:propertySuggestionGenerator tosh:DeleteTripleSuggestionGenerator ;
+  rdfs:comment "A constraint component that can be used to state that the values of a property must be unique for all instances of a given class (and its subclasses)." ;
+  rdfs:label "Unique value for class constraint component" ;
+  sh:labelTemplate "Values must be unique among all instances of {?uniqueValueForClass}" ;
+  sh:parameter dash:UniqueValueForClassConstraintComponent-uniqueValueForClass ;
+  sh:propertyValidator [
+      rdf:type sh:JSValidator ;
+      sh:jsFunctionName "validateUniqueValueForClass" ;
+      sh:jsLibrary dash:DASHJSLibrary ;
+      sh:message "Value {?value} must be unique but is also used by {?other}" ;
+    ] ;
+  sh:propertyValidator [
+      rdf:type sh:SPARQLSelectValidator ;
+      sh:message "Value {?value} must be unique but is also used by {?other}" ;
+      sh:prefixes <http://datashapes.org/dash> ;
+      sh:select """SELECT DISTINCT $this ?value ?other
+WHERE {
+	{
+    	$this $PATH ?value .
+		?other $PATH ?value .
+		FILTER (?other != $this) .
+	}
+	?other a ?type .
+	?type rdfs:subClassOf* $uniqueValueForClass .
+}""" ;
+    ] ;
+  sh:targetClass sh:PropertyShape ;
+.
+dash:UniqueValueForClassConstraintComponent-uniqueValueForClass
+  rdf:type sh:Parameter ;
+  sh:path dash:uniqueValueForClass ;
+  sh:class rdfs:Class ;
+  sh:nodeKind sh:IRI ;
 .
 dash:ValidationTestCase
   rdf:type rdfs:Class ;
@@ -730,6 +851,12 @@ dash:expectedResult
   rdfs:comment "The expected result(s) of a test case. The value range of this property is different for each kind of test cases." ;
   rdfs:domain dash:TestCase ;
   rdfs:label "expected result" ;
+.
+dash:expectedResultIsJSON
+  rdf:type rdf:Property ;
+  rdfs:comment "A flag to indicate that the expected result represents a JSON string. If set to true, then tests would compare JSON structures (regardless of whitespaces) instead of actual syntax." ;
+  rdfs:label "expected result is JSON" ;
+  rdfs:range xsd:boolean ;
 .
 dash:expectedResultIsTTL
   rdf:type rdf:Property ;
@@ -853,6 +980,13 @@ dash:height
   rdfs:label "height" ;
   rdfs:range xsd:integer ;
 .
+dash:includedExecutionPlatform
+  rdf:type rdf:Property ;
+  rdfs:comment "Can be used to state that one (subject) execution platform includes all features of another platform (object)." ;
+  rdfs:domain dash:ExecutionPlatform ;
+  rdfs:label "included execution platform" ;
+  rdfs:range dash:ExecutionPlatform ;
+.
 dash:isDeactivated
   rdf:type sh:SPARQLFunction ;
   rdfs:comment "Checks whether a given shape or constraint has been marked as \"deactivated\" using sh:deactivated." ;
@@ -967,6 +1101,13 @@ dash:propertySuggestionGenerator
   rdfs:label "property suggestion generator" ;
   rdfs:range dash:SuggestionGenerator ;
 .
+dash:requiredExecutionPlatform
+  rdf:type rdf:Property ;
+  rdfs:comment "Links a SPARQL executable with the platforms that it can be executed on. This can be used by a SHACL implementation to determine whether a constraint validator or rule shall be ignored based on the current platform. For example, if a SPARQL query uses a function or magic property that is only available in TopBraid then a non-TopBraid platform can ignore the constraint (or simply always return no validation results). If this property has no value then the assumption is that the execution will succeed. As soon as one value exists, the assumption is that the engine supports at least one of the given platforms." ;
+  rdfs:domain sh:SPARQLExecutable ;
+  rdfs:label "required execution platform" ;
+  rdfs:range dash:ExecutionPlatform ;
+.
 dash:rootClass
   rdf:type rdf:Property ;
   rdfs:label "root class" ;
@@ -1022,6 +1163,11 @@ dash:suggestionGroup
   rdfs:domain dash:Suggestion ;
   rdfs:label "suggestion" ;
 .
+dash:symmetric
+  rdf:type rdf:Property ;
+  rdfs:comment "True to declare that the associated property path is symmetric." ;
+  rdfs:label "symmetric" ;
+.
 dash:testEnvironment
   rdf:type rdf:Property ;
   rdfs:comment "Can be used by TestCases to point at a resource with information on how to set up the execution environment prior to execution." ;
@@ -1056,6 +1202,10 @@ dash:toString
   sh:select """SELECT (xsd:string($arg) AS ?result)
 WHERE {
 }""" ;
+.
+dash:uniqueValueForClass
+  rdf:type rdf:Property ;
+  rdfs:label "unique value for class" ;
 .
 dash:validateShapes
   rdf:type rdf:Property ;

@@ -2,9 +2,7 @@ package org.topbraid.jenax.util;
 
 import java.util.HashSet;
 import java.util.Set;
-import java.util.function.Predicate;
 
-import org.apache.jena.atlas.iterator.Iter;
 import org.apache.jena.graph.Graph;
 import org.apache.jena.graph.Node;
 import org.apache.jena.graph.Triple;
@@ -14,7 +12,6 @@ import org.apache.jena.mem.GraphMem;
 import org.apache.jena.shared.PrefixMapping;
 import org.apache.jena.shared.impl.PrefixMappingImpl;
 import org.apache.jena.util.iterator.ExtendedIterator;
-import org.apache.jena.util.iterator.WrappedIterator;
 
 
 // TODO: note this graph does not correctly implement GraphWithPerform and event notification contracts
@@ -117,15 +114,8 @@ public class DiffGraph extends TransparentWrappedGraph {
 
 		// If deleted triples exist then continue with a filtered iterator
 		if(deletedTriples.size() > 0) {
-			// supports remove from the delegate.
-			Predicate<Triple> filter = new Predicate<Triple>() {
-				@Override
-				public boolean test(Triple o) {
-					return !deletedTriples.contains(o);
-				}
-			};
 			// base without deleted triples.
-			base = WrappedIterator.create(Iter.filter(base, filter));
+			base = base.filterDrop(deletedTriples::contains);
 		}
 
 		// If added triples exist then chain the two together

@@ -18,6 +18,8 @@
 package org.topbraid.jenax.util;
 
 import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -62,6 +64,7 @@ import org.apache.jena.sparql.syntax.syntaxtransform.ElementTransform;
 import org.apache.jena.sparql.syntax.syntaxtransform.ElementTransformSubst;
 import org.apache.jena.sparql.syntax.syntaxtransform.ExprTransformNodeElement;
 import org.apache.jena.sparql.syntax.syntaxtransform.QueryTransformOps;
+import org.apache.jena.sparql.util.NodeUtils;
 import org.apache.jena.vocabulary.OWL;
 import org.apache.jena.vocabulary.RDF;
 import org.apache.jena.vocabulary.RDFS;
@@ -589,9 +592,8 @@ public class JenaUtil {
 
 	
 	/**
-	 * Overcomes a bug in Jena: if the base model does not declare a default namespace then the
-	 * default namespace of an import is returned!
-	 * 
+	 * Overcomes a design mismatch with Jena: if the base model does not declare a default namespace then the
+	 * default namespace of an import is returned - this is not desirable for TopBraid-like scenarios.
 	 * @param model the Model to operate on
 	 * @param prefix the prefix to get the URI of
 	 * @return the URI of prefix
@@ -870,8 +872,9 @@ public class JenaUtil {
 
 	private static void ensurePrefix(PrefixMapping prefixMapping, String prefix, String uristr) {
 	    // set if not present, or if different
-	    if (!uristr.equals(prefixMapping.getNsPrefixURI(prefix)))
+	    if (!uristr.equals(prefixMapping.getNsPrefixURI(prefix))) {
 	        prefixMapping.setNsPrefix(prefix, uristr);
+	    }
 	}
 
 	/**
@@ -1149,6 +1152,16 @@ public class JenaUtil {
 			}
 		}
 		return result;
+	}
+	
+	
+	public static void sort(List<Resource> nodes) {
+		Collections.sort(nodes, new Comparator<Resource>() {
+			@Override
+			public int compare(Resource o1, Resource o2) {
+		        return NodeUtils.compareRDFTerms(o1.asNode(), o2.asNode());
+			}
+		});
 	}
 
 

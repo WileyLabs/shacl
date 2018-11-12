@@ -19,16 +19,17 @@ package org.topbraid.jenax.progress;
 
 
 /**
- * A simple implementation of ProgressMonitor that prints messages
- * to System.out.
+ * A simple implementation of ProgressMonitor that prints messages to System.out.
  *
  * @author Holger Knublauch
  */
 public class SimpleProgressMonitor implements ProgressMonitor {
 	
-	private String name;
+	private volatile boolean canceled;
 	
 	private int currentWork;
+	
+	private String name;
 	
 	private int totalWork;
 	
@@ -54,7 +55,7 @@ public class SimpleProgressMonitor implements ProgressMonitor {
 	
 	@Override
     public boolean isCanceled() {
-		return false;
+		return canceled;
 	}
 	
 	
@@ -65,6 +66,7 @@ public class SimpleProgressMonitor implements ProgressMonitor {
 	
 	@Override
 	public void setCanceled(boolean value) {
+		this.canceled = value;
 	}
 
 

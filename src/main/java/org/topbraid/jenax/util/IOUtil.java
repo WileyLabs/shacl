@@ -14,34 +14,28 @@
  *  See the NOTICE file distributed with this work for additional
  *  information regarding copyright ownership.
  */
-package org.topbraid.shacl.expr;
+package org.topbraid.jenax.util;
 
-import java.util.Collections;
-import java.util.List;
+import java.io.* ;
+import java.nio.charset.StandardCharsets ;
 
-import org.apache.jena.rdf.model.RDFNode;
-import org.apache.jena.sparql.util.FmtUtils;
+public class IOUtil {
 
-public class ConstantTermExpression extends AtomicNodeExpression {
-	
-	private List<RDFNode> result;
-	
-	private RDFNode term;
-	
-	public ConstantTermExpression(RDFNode term) {
-		this.result = Collections.singletonList(term);
-		this.term = term;
+	public static StringBuffer loadString(Reader reader) throws IOException {
+	    try(BufferedReader bis = new BufferedReader(reader)) {
+		    StringBuffer sb = new StringBuffer();
+		    for (;;) {
+		        int c = bis.read();
+		        if (c < 0) {
+		            break;
+		        }
+		        sb.append((char)c);
+		    }
+		    return sb;
+		}
 	}
 
-
-	@Override
-	public List<RDFNode> eval(RDFNode focusNode, NodeExpressionContext context) {
-		return result;
-	}
-
-	
-	@Override
-	public String toString() {
-		return FmtUtils.stringForRDFNode(term);
+	public static StringBuffer loadStringUTF8(InputStream in) throws IOException {
+	    return loadString(new InputStreamReader(in, StandardCharsets.UTF_8));
 	}
 }

@@ -16,34 +16,18 @@
  */
 package org.topbraid.shacl.validation;
 
-import java.net.URI;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Set;
-import java.util.function.Function;
-import java.util.function.Predicate;
-
 import org.apache.jena.graph.Node;
 import org.apache.jena.query.Dataset;
 import org.apache.jena.query.QuerySolution;
-import org.apache.jena.rdf.model.Literal;
-import org.apache.jena.rdf.model.Model;
-import org.apache.jena.rdf.model.RDFNode;
-import org.apache.jena.rdf.model.Resource;
-import org.apache.jena.rdf.model.Statement;
-import org.apache.jena.rdf.model.StmtIterator;
+import org.apache.jena.rdf.model.*;
 import org.apache.jena.sparql.path.Path;
 import org.apache.jena.vocabulary.RDF;
 import org.topbraid.jenax.util.ExceptionUtil;
 import org.topbraid.jenax.util.JenaDatatypes;
 import org.topbraid.jenax.util.JenaUtil;
 import org.topbraid.shacl.arq.SHACLPaths;
-import org.topbraid.shacl.engine.AbstractEngine;
-import org.topbraid.shacl.engine.Constraint;
-import org.topbraid.shacl.engine.Shape;
-import org.topbraid.shacl.engine.ShapesGraph;
+import org.topbraid.shacl.engine.*;
+import org.topbraid.shacl.engine.filters.ExcludeMetaShapesFilter;
 import org.topbraid.shacl.js.SHACLScriptEngineManager;
 import org.topbraid.shacl.util.FailureLog;
 import org.topbraid.shacl.util.SHACLPreferences;
@@ -51,6 +35,11 @@ import org.topbraid.shacl.util.SHACLUtil;
 import org.topbraid.shacl.validation.sparql.SPARQLSubstitutions;
 import org.topbraid.shacl.vocabulary.DASH;
 import org.topbraid.shacl.vocabulary.SH;
+
+import java.net.URI;
+import java.util.*;
+import java.util.function.Function;
+import java.util.function.Predicate;
 
 /**
  * A ValidationEngine uses a given shapes graph (represented via an instance of VShapesGraph)
@@ -60,7 +49,21 @@ import org.topbraid.shacl.vocabulary.SH;
  * 
  * @author Holger Knublauch
  */
-public class ValidationEngine extends AbstractEngine {
+public class ValidationEngine extends AbstractEngine implements ConfigurableEngine {
+	
+	// The currently active ValidationEngine for cases where no direct pointer can be acquired, e.g. from HasShapeFunction
+	private static ThreadLocal<ValidationEngine> current = new ThreadLocal<>();
+	
+	public static ValidationEngine getCurrent() {
+		return current.get();
+	}
+	
+	public static void setCurrent(ValidationEngine value) {
+		current.set(value);
+	}
+	
+	
+	private ValidationEngineConfiguration configuration;
 	
 	private Predicate<RDFNode> focusNodeFilter;
 	
@@ -68,7 +71,9 @@ public class ValidationEngine extends AbstractEngine {
 	
 	private Resource report;
 
-	
+	private int violationsCount = 0;
+
+
 	/**
 	 * Constructs a new ValidationEngine.
 	 * @param dataset  the Dataset to operate on
@@ -78,6 +83,7 @@ public class ValidationEngine extends AbstractEngine {
 	 */
 	protected ValidationEngine(Dataset dataset, URI shapesGraphURI, ShapesGraph shapesGraph, Resource report) {
 		super(dataset, shapesGraph, shapesGraphURI);
+		setConfiguration(new ValidationEngineConfiguration());
 		if(report == null) {
 			Model reportModel = JenaUtil.createMemoryModel();
 			reportModel.setNsPrefixes(dataset.getDefaultModel());
@@ -113,10 +119,22 @@ public class ValidationEngine extends AbstractEngine {
 		if(focusNode != null) {
 			result.addProperty(SH.focusNode, focusNode);
 		}
+
+		checkMaximumNumberFailures(constraint);
+
 		return result;
 	}
-	
-	
+
+	private void checkMaximumNumberFailures(Constraint constraint) {
+		if (constraint.getShapeResource().getSeverity() == SH.Violation) {
+			this.violationsCount++;
+			if (configuration.getValidationErrorBatch() != -1 && violationsCount == configuration.getValidationErrorBatch()) {
+				throw new MaximumNumberViolations(violationsCount);
+			}
+		}
+	}
+
+
 	/**
 	 * Gets the validation report as a Resource in the report Model.
 	 * @return the report Resource
@@ -236,6 +254,7 @@ public class ValidationEngine extends AbstractEngine {
 			}
 			int i = 0;
 			for(Shape shape : rootShapes) {
+
 				if(monitor != null) {
 					monitor.subTask("Shape " + (++i) + ": " + getLabelFunction().apply(shape.getShapeResource()));
 				}
@@ -251,7 +270,7 @@ public class ValidationEngine extends AbstractEngine {
 					focusNodes = filteredFocusNodes;
 				}
 				if(!focusNodes.isEmpty()) {
-					if(!shapesGraph.isIgnored(shape.getShapeResource().asNode()) && !shape.getShapeResource().isDeactivated()) {
+					if(!shapesGraph.isIgnored(shape.getShapeResource().asNode())) {
 						for(Constraint constraint : shape.getConstraints()) {
 							validateNodesAgainstConstraint(focusNodes, constraint);
 						}
@@ -264,6 +283,9 @@ public class ValidationEngine extends AbstractEngine {
 					}
 				}
 			}
+		}
+		catch(MaximumNumberViolations ex) {
+			// ignore
 		}
 		finally {
 			SHACLScriptEngineManager.end(nested);
@@ -312,12 +334,15 @@ public class ValidationEngine extends AbstractEngine {
 			Shape vs = shapesGraph.getShape(shape);
 			if(!vs.getShapeResource().isDeactivated()) {
 				boolean nested = SHACLScriptEngineManager.begin();
+				ValidationEngine oldEngine = current.get();
+				current.set(this);
 				try {
 					for(Constraint constraint : vs.getConstraints()) {
 						validateNodesAgainstConstraint(focusNodes, constraint);
 					}
 				}
 				finally {
+					current.set(oldEngine);
 					SHACLScriptEngineManager.end(nested);
 				}
 			}
@@ -331,9 +356,9 @@ public class ValidationEngine extends AbstractEngine {
 	 * as one validation result is reported.  No results are recorded.
 	 * @param focusNodes  the nodes to validate
 	 * @param shape  the sh:Shape to validate against
-	 * @return true if there were any validation results
+	 * @return true if there were no validation results, false for violations
 	 */
-	public boolean validateNodesAgainstShapeBoolean(List<RDFNode> focusNodes, Node shape) {
+	public boolean nodesConformToShape(List<RDFNode> focusNodes, Node shape) {
 		if(!shapesGraph.isIgnored(shape)) {
 			Resource oldReport = report;
 			report = JenaUtil.createMemoryModel().createResource();
@@ -362,7 +387,7 @@ public class ValidationEngine extends AbstractEngine {
 	}
 	
 	
-	private void validateNodesAgainstConstraint(List<RDFNode> focusNodes, Constraint constraint) {
+	protected void validateNodesAgainstConstraint(List<RDFNode> focusNodes, Constraint constraint) {
 		ConstraintExecutor executor = constraint.getExecutor();
 		if(executor != null) {
 			if(SHACLPreferences.isProduceFailuresMode()) {
@@ -379,7 +404,22 @@ public class ValidationEngine extends AbstractEngine {
 			}
 		}
 		else {
-			FailureLog.get().logFailure("No suitable validator found for constraint " + constraint);
+			FailureLog.get().logWarning("No suitable validator found for constraint " + constraint);
+		}
+	}
+
+
+	@Override
+	public ValidationEngineConfiguration getConfiguration() {
+		return configuration;
+	}
+
+	
+	@Override
+	public void setConfiguration(ValidationEngineConfiguration configuration) {
+		this.configuration = configuration;
+		if(!configuration.getValidateShapes()) {
+			shapesGraph.setShapeFilter(new ExcludeMetaShapesFilter());
 		}
 	}
 }
