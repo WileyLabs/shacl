@@ -1,14 +1,23 @@
+/*
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ *
+ *  See the NOTICE file distributed with this work for additional
+ *  information regarding copyright ownership.
+ */
 package org.topbraid.shacl.arq.functions;
 
 import java.net.URI;
-
-import org.topbraid.shacl.constraints.AbstractConstraintValidator;
-import org.topbraid.shacl.constraints.FailureLog;
-import org.topbraid.shacl.constraints.ResourceConstraintValidator;
-import org.topbraid.shacl.vocabulary.DASH;
-import org.topbraid.shacl.vocabulary.SH;
-import org.topbraid.spin.arq.AbstractFunction4;
-import org.topbraid.spin.util.JenaDatatypes;
+import java.util.Collections;
 
 import org.apache.jena.graph.Node;
 import org.apache.jena.query.Dataset;
@@ -21,39 +30,80 @@ import org.apache.jena.sparql.expr.ExprEvalException;
 import org.apache.jena.sparql.expr.NodeValue;
 import org.apache.jena.sparql.function.FunctionEnv;
 import org.apache.jena.vocabulary.RDF;
+import org.topbraid.jenax.functions.AbstractFunction3;
+import org.topbraid.jenax.util.ARQFactory;
+import org.topbraid.jenax.util.JenaDatatypes;
+import org.topbraid.shacl.engine.ShapesGraph;
+import org.topbraid.shacl.util.FailureLog;
+import org.topbraid.shacl.util.RecursionGuard;
+import org.topbraid.shacl.validation.DefaultShapesGraphProvider;
+import org.topbraid.shacl.validation.ValidationEngine;
+import org.topbraid.shacl.validation.ValidationEngineFactory;
+import org.topbraid.shacl.vocabulary.DASH;
+import org.topbraid.shacl.vocabulary.SH;
 
 /**
- * The native implementation of the sh:hasShape function.
+ * The implementation of the tosh:hasShape function.
  * 
  * @author Holger Knublauch
  */
-public class HasShapeFunction extends AbstractFunction4 {
+public class HasShapeFunction extends AbstractFunction3 {
 	
 	private static ThreadLocal<Boolean> recursionIsErrorFlag = new ThreadLocal<Boolean>();
+	
+	private static ThreadLocal<Model> resultsModelTL = new ThreadLocal<>();
+	
+	private static ThreadLocal<ShapesGraph> shapesGraph = new ThreadLocal<>();
+	
+	private static ThreadLocal<URI> shapesGraphURI = new ThreadLocal<URI>();
+	
+	public static Model getResultsModel() {
+		return resultsModelTL.get();
+	}
+	
+	public static ShapesGraph getShapesGraph() {
+		return shapesGraph.get();
+	}
+	
+	public static URI getShapesGraphURI() {
+		return shapesGraphURI.get();
+	}
+	
+	public static void setResultsModel(Model value) {
+		resultsModelTL.set(value);
+	}
+	
+	public static void setShapesGraph(ShapesGraph value, URI uri) {
+		if(value == null && uri != null) {
+			Model shapesModel = ARQFactory.getNamedModel(uri.toString());
+			value = new ShapesGraph(shapesModel);
+		}
+		shapesGraph.set(value);
+		shapesGraphURI.set(uri);
+	}
 
 	
 	@Override
-	protected NodeValue exec(Node resourceNode, Node shapeNode, Node shapesGraphNode, Node recursionIsError, FunctionEnv env) {
+	protected NodeValue exec(Node focusNode, Node shapeNode, Node recursionIsError, FunctionEnv env) {
+
 		Boolean oldFlag = recursionIsErrorFlag.get();
 		if(JenaDatatypes.TRUE.asNode().equals(recursionIsError)) {
 			recursionIsErrorFlag.set(true);
 		}
 		try {
-			if(SHACLRecursionGuard.start(resourceNode, shapeNode)) {
+			if(RecursionGuard.start(focusNode, shapeNode)) {
+				RecursionGuard.end(focusNode, shapeNode);
 				if(JenaDatatypes.TRUE.asNode().equals(recursionIsError) || (oldFlag != null && oldFlag)) {
 					String message = "Unsupported recursion";
-					Model resultsModel = AbstractConstraintValidator.getCurrentResultsModel();
-					if(resultsModel != null) {
-						Resource failure = resultsModel.createResource(DASH.FailureResult);
-						failure.addProperty(SH.message, message);
-						failure.addProperty(SH.focusNode, resultsModel.asRDFNode(resourceNode));
-						failure.addProperty(SH.sourceShape, resultsModel.asRDFNode(shapeNode));
-					}
+					Model resultsModel = resultsModelTL.get();
+					Resource failure = resultsModel.createResource(DASH.FailureResult);
+					failure.addProperty(SH.resultMessage, message);
+					failure.addProperty(SH.focusNode, resultsModel.asRDFNode(focusNode));
+					failure.addProperty(SH.sourceShape, resultsModel.asRDFNode(shapeNode));
 					FailureLog.get().logFailure(message);
 					throw new ExprEvalException("Unsupported recursion");
 				}
 				else {
-					SHACLRecursionGuard.end(resourceNode, shapeNode);
 					return NodeValue.TRUE;
 				}
 			}
@@ -61,17 +111,34 @@ public class HasShapeFunction extends AbstractFunction4 {
 				
 				try {
 					Model model = ModelFactory.createModelForGraph(env.getActiveGraph());
-					RDFNode resource = model.asRDFNode(resourceNode);
+					RDFNode resource = model.asRDFNode(focusNode);
 					Dataset dataset = DatasetImpl.wrap(env.getDataset());
 					Resource shape = (Resource) dataset.getDefaultModel().asRDFNode(shapeNode);
-					Model results = doRun(resource, shape, dataset,	shapesGraphNode);
+					Model results = doRun(resource, shape, dataset);
+					if(resultsModelTL.get() != null) {
+						resultsModelTL.get().add(results);
+					}
 					if(results.contains(null, RDF.type, DASH.FailureResult)) {
 						throw new ExprEvalException("Propagating failure from nested shapes");
 					}
-					return NodeValue.makeBoolean(results.isEmpty());
+
+					if(ValidationEngine.getCurrent() != null && ValidationEngine.getCurrent().getConfiguration().getReportDetails()) {
+						boolean result = true;
+						for(Resource r : results.listSubjectsWithProperty(RDF.type, SH.ValidationResult).toList()) {
+							if(!results.contains(null, SH.detail, r)) {
+								result = false;
+								break;
+							}
+						}
+						return NodeValue.makeBoolean(result);
+					}
+					else {
+						boolean result = !results.contains(null, RDF.type, SH.ValidationResult);
+						return NodeValue.makeBoolean(result);
+					}
 				}
 				finally {
-					SHACLRecursionGuard.end(resourceNode, shapeNode);
+					RecursionGuard.end(focusNode, shapeNode);
 				}
 			}
 		}
@@ -81,9 +148,25 @@ public class HasShapeFunction extends AbstractFunction4 {
 	}
 
 
-	protected Model doRun(RDFNode resource, Resource shape, Dataset dataset,
-			Node shapesGraphNode) {
-		return ResourceConstraintValidator.get().validateNodeAgainstShape(
-				dataset, URI.create(shapesGraphNode.getURI()), resource.asNode(), shape.asNode(), SH.Violation, null);
+	private Model doRun(RDFNode focusNode, Resource shape, Dataset dataset) {
+		URI sgURI = shapesGraphURI.get();
+		ShapesGraph sg = shapesGraph.get();
+		if(sgURI == null) {
+			sgURI = DefaultShapesGraphProvider.get().getDefaultShapesGraphURI(dataset);
+			Model shapesModel = dataset.getNamedModel(sgURI.toString());
+			sg = new ShapesGraph(shapesModel);
+		}
+		else if(sg == null) {
+			Model shapesModel = dataset.getNamedModel(sgURI.toString());
+			sg = new ShapesGraph(shapesModel);
+			shapesGraph.set(sg);
+		}
+		ValidationEngine engine = ValidationEngineFactory.get().create(dataset, sgURI, sg, null);
+		if(ValidationEngine.getCurrent() != null) {
+			engine.setConfiguration(ValidationEngine.getCurrent().getConfiguration());
+		}
+		return engine.
+				validateNodesAgainstShape(Collections.singletonList(focusNode), shape.asNode()).
+				getModel();
 	}
 }
