@@ -2564,6 +2564,7 @@ sh:argument a rdf:Property ; rdfs:label "argument" .
 sh:cachable a rdf:Property ; rdfs:label "cachable" .
 sh:class a rdf:Property ; rdfs:label "class" .
 sh:classIn a rdf:Property ; rdfs:label "class in" .
+sh:closed a rdf:Property ; rdfs:label "closed" . #PJ:2018-02-24
 sh:constraint a rdf:Property ; rdfs:label "constraint" .
 sh:datatype a rdf:Property ; rdfs:label "datatype" .
 sh:datatypeIn a rdf:Property ; rdfs:label "datatype in" .
