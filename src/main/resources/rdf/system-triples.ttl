@@ -1,4 +1,5 @@
 # RDF/OWL system triples
+#Patrick Johnston (PJ) - added
 
 @prefix owl: <http://www.w3.org/2002/07/owl#> .
 @prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
@@ -60,6 +61,14 @@ rdf:XMLLiteral
   rdfs:isDefinedBy rdf: ;
   rdfs:label "XMLLiteral" ;
 .
+#PJ Added 2018-04-06
+rdf:HTML
+  rdf:type rdfs:Datatype ;
+  rdfs:comment "The class of HTML literal values." ;
+  rdfs:isDefinedBy rdf: ;
+  rdfs:label "HTML" ;
+.
+
 rdf:first
   rdf:type rdf:Property ;
   rdfs:comment "The first item in the subject RDF list." ;
