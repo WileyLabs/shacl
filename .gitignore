@@ -77,3 +77,5 @@ gradle-app.setting
 .DS_Store?
 ._*
 /bin/
+.idea
+.idea

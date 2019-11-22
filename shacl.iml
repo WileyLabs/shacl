@@ -15,6 +15,38 @@
     <orderEntry type="library" name="Maven: org.apache.jena:jena-arq:3.8.0" level="project" />
     <orderEntry type="library" name="Maven: org.apache.jena:jena-core:3.8.0" level="project" />
     <orderEntry type="library" name="Maven: org.apache.jena:jena-iri:3.8.0" level="project" />
+    <orderEntry type="library" name="Maven: commons-codec:commons-codec:1.11" level="project" />
+    <orderEntry type="library" name="Maven: org.apache.jena:jena-base:3.8.0" level="project" />
+    <orderEntry type="library" name="Maven: org.apache.commons:commons-csv:1.5" level="project" />
+    <orderEntry type="library" name="Maven: org.apache.commons:commons-compress:1.17" level="project" />
+    <orderEntry type="library" name="Maven: org.apache.jena:jena-shaded-guava:3.8.0" level="project" />
+    <orderEntry type="library" name="Maven: org.apache.httpcomponents:httpclient:4.5.5" level="project" />
+    <orderEntry type="library" name="Maven: org.apache.httpcomponents:httpcore:4.4.9" level="project" />
+    <orderEntry type="library" name="Maven: com.github.jsonld-java:jsonld-java:0.12.0" level="project" />
+    <orderEntry type="library" name="Maven: com.fasterxml.jackson.core:jackson-core:2.9.5" level="project" />
+    <orderEntry type="library" name="Maven: com.fasterxml.jackson.core:jackson-databind:2.9.5" level="project" />
+    <orderEntry type="library" name="Maven: commons-io:commons-io:2.6" level="project" />
+    <orderEntry type="library" name="Maven: org.apache.httpcomponents:httpclient-cache:4.5.5" level="project" />
+    <orderEntry type="library" name="Maven: org.apache.thrift:libthrift:0.10.0" level="project" />
+    <orderEntry type="library" name="Maven: org.apache.jena:jena-arq:3.8.0" level="project" />
+    <orderEntry type="library" name="Maven: org.apache.jena:jena-core:3.8.0" level="project" />
+    <orderEntry type="library" name="Maven: org.apache.jena:jena-iri:3.8.0" level="project" />
+    <orderEntry type="library" name="Maven: commons-codec:commons-codec:1.11" level="project" />
+    <orderEntry type="library" name="Maven: org.apache.jena:jena-base:3.8.0" level="project" />
+    <orderEntry type="library" name="Maven: org.apache.commons:commons-csv:1.5" level="project" />
+    <orderEntry type="library" name="Maven: org.apache.commons:commons-compress:1.17" level="project" />
+    <orderEntry type="library" name="Maven: org.apache.jena:jena-shaded-guava:3.8.0" level="project" />
+    <orderEntry type="library" name="Maven: org.apache.httpcomponents:httpclient:4.5.5" level="project" />
+    <orderEntry type="library" name="Maven: org.apache.httpcomponents:httpcore:4.4.9" level="project" />
+    <orderEntry type="library" name="Maven: com.github.jsonld-java:jsonld-java:0.12.0" level="project" />
+    <orderEntry type="library" name="Maven: com.fasterxml.jackson.core:jackson-core:2.9.5" level="project" />
+    <orderEntry type="library" name="Maven: com.fasterxml.jackson.core:jackson-databind:2.9.5" level="project" />
+    <orderEntry type="library" name="Maven: commons-io:commons-io:2.6" level="project" />
+    <orderEntry type="library" name="Maven: org.apache.httpcomponents:httpclient-cache:4.5.5" level="project" />
+    <orderEntry type="library" name="Maven: org.apache.thrift:libthrift:0.10.0" level="project" />
+    <orderEntry type="library" name="Maven: org.apache.jena:jena-arq:3.8.0" level="project" />
+    <orderEntry type="library" name="Maven: org.apache.jena:jena-core:3.8.0" level="project" />
+    <orderEntry type="library" name="Maven: org.apache.jena:jena-iri:3.8.0" level="project" />
     <orderEntry type="library" name="Maven: commons-cli:commons-cli:1.4" level="project" />
     <orderEntry type="library" name="Maven: commons-codec:commons-codec:1.11" level="project" />
     <orderEntry type="library" name="Maven: org.apache.jena:jena-base:3.8.0" level="project" />
