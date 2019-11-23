@@ -45,7 +45,6 @@ import org.topbraid.shacl.engine.ShapesGraph;
 import org.topbraid.shacl.expr.NodeExpression;
 import org.topbraid.shacl.expr.NodeExpressionFactory;
 import org.topbraid.shacl.util.OrderComparator;
-import org.topbraid.shacl.util.SHACLUtil;
 import org.topbraid.shacl.validation.ValidationEngine;
 import org.topbraid.shacl.validation.ValidationEngineFactory;
 import org.topbraid.shacl.vocabulary.SH;
@@ -53,6 +52,9 @@ import org.topbraid.shacl.vocabulary.SH;
 /**
  * A SHACL Rules engine with a pluggable architecture for different execution languages
  * including Triple rules, SPARQL rules and JavaScript rules.
+ * 
+ * In preparation for inclusion into SHACL 1.1, this engine also supports sh:values rules,
+ * see https://www.topquadrant.com/graphql/values.html.
  * 
  * @author Holger Knublauch
  */
@@ -97,7 +99,7 @@ public class RuleEngine extends AbstractEngine {
 	 * focus node or all target nodes of the shapes.
 	 * @param ruleShapes  the shapes to execute
 	 * @param focusNode  the (optional) focus node or null for all target nodes
-	 * @throws InterruptedException
+	 * @throws InterruptedException  if the monitor has canceled this
 	 */
 	public void executeShapes(List<Shape> ruleShapes, RDFNode focusNode) throws InterruptedException {
 
@@ -136,7 +138,7 @@ public class RuleEngine extends AbstractEngine {
 	
 	public void executeShape(Shape shape, String baseMessage, RDFNode focusNode) throws InterruptedException {
 		
-		if(shape.getShapeResource().isDeactivated()) {
+		if(shape.isDeactivated()) {
 			return;
 		}
 		
@@ -150,7 +152,7 @@ public class RuleEngine extends AbstractEngine {
 			targetNodes = Collections.singletonList(focusNode);
 		}
 		else {
-			targetNodes = SHACLUtil.getTargetNodes(shape.getShapeResource(), dataset);
+			targetNodes = new ArrayList<>(shape.getTargetNodes(dataset));
 		}
 		
 		if(!targetNodes.isEmpty()) {
@@ -221,7 +223,6 @@ public class RuleEngine extends AbstractEngine {
 	private List<Rule> getShapeRules(Shape shape) {
 		return shape2Rules.computeIfAbsent(shape, s2 -> {
 			List<Rule> rules = new LinkedList<>();
-			shape2Rules.put(shape, rules);
 			List<Resource> raws = new LinkedList<>();
 			for(Statement s : shape.getShapeResource().listProperties(SH.rule).toList()) {
 				if(s.getObject().isResource() && !s.getResource().hasProperty(SH.deactivated, JenaDatatypes.TRUE)) {
@@ -240,11 +241,13 @@ public class RuleEngine extends AbstractEngine {
 				rule2Conditions.put(rule, conditions);
 			}
 			for(Resource ps : JenaUtil.getResourceProperties(shape.getShapeResource(), SH.property)) {
-				Resource path = JenaUtil.getResourceProperty(ps, SH.path);
-				if(path != null && path.isURIResource()) {
-					for(Statement s : ps.listProperties(SH.values).toList()) {
-						NodeExpression expr = NodeExpressionFactory.get().create(s.getObject());
-						rules.add(new ValuesRule(expr, path.asNode(), false));
+				if(!ps.hasProperty(SH.deactivated, JenaDatatypes.TRUE)) {
+					Resource path = JenaUtil.getResourceProperty(ps, SH.path);
+					if(path != null && path.isURIResource()) {
+						for(Statement s : ps.listProperties(SH.values).toList()) {
+							NodeExpression expr = NodeExpressionFactory.get().create(s.getObject());
+							rules.add(new ValuesRule(expr, path.asNode(), false));
+						}
 					}
 				}
 			}

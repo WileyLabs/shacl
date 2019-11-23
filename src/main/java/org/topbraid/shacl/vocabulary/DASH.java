@@ -34,7 +34,11 @@ public class DASH {
     public final static String PREFIX = "dash";
 
 
+	public final static Resource all = ResourceFactory.createResource(NS + "all");
+
 	public final static Resource DefaultValueTypeRule = ResourceFactory.createResource(NS + "DefaultValueTypeRule");
+
+    public final static Resource Editor = ResourceFactory.createResource(NS + "Editor");
 
     public final static Resource ExecutionPlatform = ResourceFactory.createResource(NS + "ExecutionPlatform");
 
@@ -57,6 +61,10 @@ public class DASH {
     public final static Resource JSTestCase = ResourceFactory.createResource(NS + "JSTestCase");
 
     public final static Resource ListShape = ResourceFactory.createResource(NS + "ListShape");
+    
+    public final static Resource None = ResourceFactory.createResource(NS + "None");
+
+    public final static Resource NonRecursiveConstraintComponent = ResourceFactory.createResource(NS + "NonRecursiveConstraintComponent");
 
     public final static Resource QueryTestCase = ResourceFactory.createResource(NS + "QueryTestCase");
 
@@ -64,7 +72,15 @@ public class DASH {
 
     public final static Resource RDFQueryJSLibrary = ResourceFactory.createResource(NS + "RDFQueryJSLibrary");
 
+    public final static Resource ReifiableByConstraintComponent = ResourceFactory.createResource(NS + "ReifiableByConstraintComponent");
+
+    public final static Resource SPARQLConstructTemplate = ResourceFactory.createResource(NS + "SPARQLConstructTemplate");
+
+    public final static Resource SPARQLSelectTemplate = ResourceFactory.createResource(NS + "SPARQLSelectTemplate");
+
     public final static Resource SPARQLUpdateSuggestionGenerator = ResourceFactory.createResource(NS + "SPARQLUpdateSuggestionGenerator");
+
+    public final static Resource SingleLineConstraintComponent = ResourceFactory.createResource(NS + "SingleLineConstraintComponent");
 
     public final static Resource SuccessResult = ResourceFactory.createResource(NS + "SuccessResult");
     
@@ -78,6 +94,12 @@ public class DASH {
 
     public final static Resource ValidationTestCase = ResourceFactory.createResource(NS + "ValidationTestCase");
 
+    public final static Resource ValueTableViewer = ResourceFactory.createResource(NS + "ValueTableViewer");
+
+    public final static Resource Viewer = ResourceFactory.createResource(NS + "Viewer");
+
+    public final static Resource Widget = ResourceFactory.createResource(NS + "Widget");
+
 
     public final static Property abstract_ = ResourceFactory.createProperty(NS + "abstract");
     
@@ -89,9 +111,17 @@ public class DASH {
 
     public final static Property composite = ResourceFactory.createProperty(NS + "composite");
 
-	public final static Property defaultValueType = ResourceFactory.createProperty(NS + "defaultValueType");
+    public final static Property defaultValueType = ResourceFactory.createProperty(NS + "defaultValueType");
+
+    public final static Property defaultViewForRole = ResourceFactory.createProperty(NS + "defaultViewForRole");
     
     public final static Property deletedTriple = ResourceFactory.createProperty(NS + "deletedTriple");
+    
+    public final static Property detailsEndpoint = ResourceFactory.createProperty(NS + "detailsEndpoint");
+    
+    public final static Property detailsGraph = ResourceFactory.createProperty(NS + "detailsGraph");
+    
+    public final static Property editor = ResourceFactory.createProperty(NS + "editor");
     
     public final static Property expectedResult = ResourceFactory.createProperty(NS + "expectedResult");
     
@@ -100,6 +130,8 @@ public class DASH {
     public final static Property expectedResultIsTTL = ResourceFactory.createProperty(NS + "expectedResultIsTTL");
 
     public final static Property expression = ResourceFactory.createProperty(NS + "expression");
+
+    public final static Property hidden = ResourceFactory.createProperty(NS + "hidden");
     
     public final static Property includedExecutionPlatform = ResourceFactory.createProperty(NS + "includedExecutionPlatform");
 
@@ -115,7 +147,13 @@ public class DASH {
 
     public final static Property rootClass = ResourceFactory.createProperty(NS + "rootClass");
 
+    public final static Property readOnly = ResourceFactory.createProperty(NS + "readOnly");
+    
+    public final static Property reifiableBy = ResourceFactory.createProperty(NS + "reifiableBy");
+
     public final static Property shape = ResourceFactory.createProperty(NS + "shape");
+    
+    public final static Property singleLine = ResourceFactory.createProperty(NS + "singleLine");
     
     public final static Property suggestion = ResourceFactory.createProperty(NS + "suggestion");
     
@@ -138,6 +176,8 @@ public class DASH {
     public final static Property uriStart = ResourceFactory.createProperty(NS + "uriStart");
     
     public final static Property validateShapes = ResourceFactory.createProperty(NS + "validateShapes");
+    
+    public final static Property viewer = ResourceFactory.createProperty(NS + "viewer");
     
     public final static Property x = ResourceFactory.createProperty(NS + "x");
     

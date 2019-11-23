@@ -14,21 +14,14 @@
  *  See the NOTICE file distributed with this work for additional
  *  information regarding copyright ownership.
  */
+package org.topbraid.shacl.targets;
 
-package org.topbraid.jenax.progress;
+import org.apache.jena.rdf.model.Resource;
+import org.topbraid.shacl.model.SHParameterizableTarget;
 
-
-/**
- * A generic interface similar to Runnable, but with an additional
- * argument that allows the Runnable to display progress.
- *
- * @author Holger Knublauch
- */
-public interface RunnableWithProgress {
-
-	/**
-	 * Runs the runnable.
-	 * @param monitor  an optional ProgressMonitor
-	 */
-	void run(ProgressMonitor monitor);
+public interface CustomTargetLanguage {
+	
+	boolean canHandle(Resource target);
+	
+	Target createTarget(Resource executable, SHParameterizableTarget parameterizableTarget);
 }

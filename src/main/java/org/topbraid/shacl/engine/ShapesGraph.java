@@ -41,6 +41,7 @@ import org.topbraid.shacl.expr.lib.UnionExpression;
 import org.topbraid.shacl.model.SHConstraintComponent;
 import org.topbraid.shacl.model.SHFactory;
 import org.topbraid.shacl.model.SHShape;
+import org.topbraid.shacl.vocabulary.DASH;
 import org.topbraid.shacl.vocabulary.SH;
 
 /**
@@ -51,7 +52,13 @@ import org.topbraid.shacl.vocabulary.SH;
  */
 public class ShapesGraph {
 	
+	private final static Map<Node,NodeExpression> EMPTY = new HashMap<>();
+	
 	private Predicate<Constraint> constraintFilter;
+	
+	private Map<Node,Map<Node,NodeExpression>> defaultValueMap = new ConcurrentHashMap<>();
+	
+	private Map<Node,Boolean> ignoredShapes = new ConcurrentHashMap<>();
 	
 	private Map<Property,SHConstraintComponent> parametersMap = new ConcurrentHashMap<>();
 	
@@ -102,7 +109,7 @@ public class ShapesGraph {
 	 * Gets all non-deactivated shapes that declare a target and pass the provided filter.
 	 * @return the root shapes
 	 */
-	public List<Shape> getRootShapes() {
+	public synchronized List<Shape> getRootShapes() {
 		if(rootShapes == null) {
 			
 			// Collect all shapes, as identified by target and/or type
@@ -127,7 +134,7 @@ public class ShapesGraph {
 			this.rootShapes = new LinkedList<Shape>();
 			for(Resource candidate : candidates) {
 				SHShape shape = SHFactory.asShape(candidate);
-				if(!shape.isDeactivated() && (shapeFilter == null || shapeFilter.test(shape))) {
+				if(!shape.isDeactivated() && !isIgnored(shape.asNode())) {
 					this.rootShapes.add(getShape(shape.asNode()));
 				}
 			}
@@ -142,28 +149,46 @@ public class ShapesGraph {
 	
 	
 	/**
+	 * Gets a Map from (node) shapes to NodeExpressions derived from sh:defaultValue statements.
+	 * @param predicate  the predicate to infer
+	 * @return a Map which is empty if the predicate is not mentioned in any inferences
+	 */
+	public Map<Node,NodeExpression> getDefaultValueNodeExpressionsMap(Resource predicate) {
+		return getExpressionsMap(defaultValueMap, predicate, SH.defaultValue);
+	}
+	
+	
+	/**
 	 * Gets a Map from (node) shapes to NodeExpressions derived from sh:values statements.
 	 * Can be used to efficiently figure out how to infer the values of a given instance, based on the rdf:types
 	 * of the instance.
 	 * @param predicate  the predicate to infer
-	 * @return a Map or null if the predicate is not mentioned in any inferences
+	 * @return a Map which is empty if the predicate is not mentioned in any inferences
 	 */
 	public Map<Node,NodeExpression> getValuesNodeExpressionsMap(Resource predicate) {
+		return getExpressionsMap(valuesMap, predicate, SH.values);
+	}
+	
+	
+	private Map<Node,NodeExpression> getExpressionsMap(Map<Node,Map<Node,NodeExpression>> valuesMap, Resource predicate, Property systemPredicate) {
 		return valuesMap.computeIfAbsent(predicate.asNode(), p -> {
 			
 			Map<Node,List<NodeExpression>> map = new HashMap<>();
 			StmtIterator it = shapesModel.listStatements(null, SH.path, predicate);
 			while(it.hasNext()) {
 				Resource ps = it.next().getSubject();
-				if(ps.hasProperty(SH.values) && !ps.hasProperty(SH.deactivated, JenaDatatypes.TRUE)) {
+				if(ps.hasProperty(systemPredicate) && !ps.hasProperty(SH.deactivated, JenaDatatypes.TRUE)) {
 					StmtIterator nit = shapesModel.listStatements(null, SH.property, ps);
 					while(nit.hasNext()) {
 						Resource nodeShape = nit.next().getSubject();
 						if(!nodeShape.hasProperty(SH.deactivated, JenaDatatypes.TRUE)) {
 							Node shapeNode = nodeShape.asNode();
-							addExpressions(map, ps, shapeNode);
+							addExpressions(map, ps, shapeNode, systemPredicate);
 							for(Resource targetClass : JenaUtil.getResourceProperties(nodeShape, SH.targetClass)) {
-								addExpressions(map, ps, targetClass.asNode());
+								addExpressions(map, ps, targetClass.asNode(), systemPredicate);
+							}
+							for(Resource targetClass : JenaUtil.getResourceProperties(nodeShape, DASH.applicableToClass)) {
+								addExpressions(map, ps, targetClass.asNode(), systemPredicate);
 							}
 						}
 					}
@@ -171,7 +196,8 @@ public class ShapesGraph {
 			}
 			
 			if(map.isEmpty()) {
-				return null;
+				// Return a non-null but empty value to avoid re-computation (null not supported by ConcurrentHashMap)
+				return EMPTY;
 			}
 			else {
 				Map<Node,NodeExpression> result = new HashMap<>();
@@ -191,10 +217,10 @@ public class ShapesGraph {
 	}
 
 
-	private void addExpressions(Map<Node, List<NodeExpression>> map, Resource ps, Node shapeNode) {
+	private void addExpressions(Map<Node, List<NodeExpression>> map, Resource ps, Node shapeNode, Property systemPredicate) {
 		map.computeIfAbsent(shapeNode, n -> {
 			List<NodeExpression> exprs = new LinkedList<>();
-			StmtIterator vit = ps.listProperties(SH.values);
+			StmtIterator vit = ps.listProperties(systemPredicate);
 			while(vit.hasNext()) {
 				RDFNode expr = vit.next().getObject();
 				NodeExpression nodeExpression = NodeExpressionFactory.get().create(expr);
@@ -203,6 +229,11 @@ public class ShapesGraph {
 			return exprs;
 		});
 	}
+	
+	
+	public Model getShapesModel() {
+		return shapesModel;
+	}
 
 
 	public boolean isIgnored(Node shapeNode) {
@@ -210,8 +241,10 @@ public class ShapesGraph {
 			return false;
 		}
 		else {
-			SHShape shape = SHFactory.asShape(shapesModel.asRDFNode(shapeNode));
-			return !shapeFilter.test(shape);
+			return ignoredShapes.computeIfAbsent(shapeNode, node -> {				
+				SHShape shape = SHFactory.asShape(shapesModel.asRDFNode(shapeNode));
+				return !shapeFilter.test(shape);
+			});
 		}
 	}
 	

@@ -22,7 +22,7 @@
 
   <groupId>org.topbraid</groupId>
   <artifactId>shacl</artifactId>
-  <version>1.2.0-SNAPSHOT</version>
+  <version>1.3.1-SNAPSHOT</version>
   <packaging>jar</packaging>
 
   <name>TopBraid SHACL API</name>
@@ -63,21 +63,18 @@
     <url>https://github.com/TopQuadrant/shacl</url>
     <connection>scm:git:https://github.com/TopQuadrant/shacl</connection>
     <developerConnection>scm:git:git@github.com:TopQuadrant/shacl.git</developerConnection>
-    <tag>HEAD</tag>
+    <tag>shacl-1.3.0</tag>
   </scm>
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <ver.jena>3.8.0</ver.jena>
+    <ver.jena>3.13.0</ver.jena>
     <ver.junit>4.12</ver.junit>
-    <ver.slf4j>1.7.25</ver.slf4j>
+    <ver.antlr>4.5.3</ver.antlr>
+    <ver.slf4j>1.7.26</ver.slf4j>
     <ver.log4j1>1.2.17</ver.log4j1>
   </properties>
 
-  <prerequisites>
-    <maven>3.0.4</maven>
-  </prerequisites>
- 
   <dependencies>
 
     <dependency>
@@ -99,6 +96,12 @@
       <version>${ver.slf4j}</version>
     </dependency>
 
+    <dependency>
+      <groupId>org.antlr</groupId>
+      <artifactId>antlr4-runtime</artifactId>
+      <version>${ver.antlr}</version>
+    </dependency>
+
     <!-- Logging : <optional> so the application chooses the provider for slf4j -->
     <dependency>
       <groupId>org.slf4j</groupId>
@@ -117,14 +120,14 @@
     </dependency>
 
   </dependencies>
-
+  
   <build>
     <plugins>
 
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-compiler-plugin</artifactId>
-        <version>3.7.0</version>
+        <version>3.8.0</version>
          <configuration>
             <encoding>UTF-8</encoding>
             <debug>true</debug>
@@ -138,7 +141,7 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-jar-plugin</artifactId>
-        <version>3.0.2</version>
+        <version>3.1.1</version>
         <executions>
           <execution>
             <goals>
@@ -172,7 +175,7 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-assembly-plugin</artifactId>
-        <version>3.1.0</version>
+        <version>3.1.1</version>
         <configuration>
           <descriptors>
             <descriptor>src/assembly/bin.xml</descriptor>

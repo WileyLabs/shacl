@@ -59,12 +59,24 @@ public class RDFLabels {
 		RDFLabels.singleton = value;
 	}
 	
+
+	/**
+	 * Gets a "human-readable" label for a blank node,
+	 * e.g. Manchester Syntax for OWL restrictions.
+	 * The default implementation doesn't do much yet it's overloaded in TopBraid.
+	 * @param resource  the blank node resource to get the label for
+	 * @return a label for the bnode
+	 */
+	public String getBlankNodeLabel(Resource resource) {
+		return "_:" + resource.getId();
+	}
+	
 	
 	/**
 	 * Gets a "human-readable" label for a given Resource.
 	 * This checks for any existing rdfs:label, otherwise falls back to
 	 * <code>getLabel()</code>.
-	 * @param resource
+	 * @param resource  the resource to get the label for
 	 * @return the label (never null)
 	 */
 	public String getCustomizedLabel(Resource resource) {
@@ -105,6 +117,9 @@ public class RDFLabels {
 			}
 			buffer.append("]");
 			return buffer.toString();
+		}
+		else if(resource.isAnon()) {
+			return getBlankNodeLabel(resource);
 		}
 		else {
 			return resource.toString();

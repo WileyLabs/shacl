@@ -26,6 +26,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.BiFunction;
 
 import org.apache.jena.enhanced.EnhGraph;
 import org.apache.jena.graph.Factory;
@@ -34,6 +35,7 @@ import org.apache.jena.graph.Node;
 import org.apache.jena.graph.compose.MultiUnion;
 import org.apache.jena.ontology.OntModel;
 import org.apache.jena.ontology.OntModelSpec;
+import org.apache.jena.query.ARQ;
 import org.apache.jena.query.Dataset;
 import org.apache.jena.query.Query;
 import org.apache.jena.query.QueryExecution;
@@ -53,17 +55,30 @@ import org.apache.jena.rdf.model.StmtIterator;
 import org.apache.jena.rdf.model.impl.PropertyImpl;
 import org.apache.jena.rdf.model.impl.StmtIteratorImpl;
 import org.apache.jena.shared.PrefixMapping;
+import org.apache.jena.sparql.ARQConstants;
+import org.apache.jena.sparql.core.DatasetGraph;
 import org.apache.jena.sparql.core.Var;
+import org.apache.jena.sparql.engine.ExecutionContext;
 import org.apache.jena.sparql.engine.binding.Binding;
 import org.apache.jena.sparql.engine.binding.BindingHashMap;
+import org.apache.jena.sparql.engine.binding.BindingRoot;
+import org.apache.jena.sparql.expr.E_Function;
 import org.apache.jena.sparql.expr.Expr;
+import org.apache.jena.sparql.expr.ExprEvalException;
+import org.apache.jena.sparql.expr.ExprList;
 import org.apache.jena.sparql.expr.ExprTransform;
 import org.apache.jena.sparql.expr.ExprTransformer;
+import org.apache.jena.sparql.expr.ExprVar;
+import org.apache.jena.sparql.expr.NodeValue;
+import org.apache.jena.sparql.expr.nodevalue.NodeFunctions;
+import org.apache.jena.sparql.function.FunctionEnv;
 import org.apache.jena.sparql.graph.NodeTransform;
 import org.apache.jena.sparql.syntax.syntaxtransform.ElementTransform;
 import org.apache.jena.sparql.syntax.syntaxtransform.ElementTransformSubst;
 import org.apache.jena.sparql.syntax.syntaxtransform.ExprTransformNodeElement;
 import org.apache.jena.sparql.syntax.syntaxtransform.QueryTransformOps;
+import org.apache.jena.sparql.util.Context;
+import org.apache.jena.sparql.util.NodeFactoryExtra;
 import org.apache.jena.sparql.util.NodeUtils;
 import org.apache.jena.vocabulary.OWL;
 import org.apache.jena.vocabulary.RDF;
@@ -119,9 +134,9 @@ public class JenaUtil {
 	/**
 	 * Populates a result set of resources reachable from a subject via zero or more steps with a given predicate.
 	 * Implementation note: the results set need only implement {@link Collection#add(Object)}.
-	 * @param results   The transitive objects reached from subject via triples with the given predicate
-	 * @param subject
-	 * @param predicate
+	 * @param results  The transitive objects reached from subject via triples with the given predicate
+	 * @param subject  the subject to start traversal at
+	 * @param predicate  the predicate to walk
 	 */
 	public static void addTransitiveObjects(Set<Resource> results, Resource subject, Property predicate) {
 		helper.setGraphReadOptimization(true);
@@ -224,9 +239,12 @@ public class JenaUtil {
 	
 	/**
 	 * Returns a set of resources reachable from an object via one or more reversed steps with a given predicate.
+	 * @param object  the object to start traversal at
+	 * @param predicate  the predicate to walk
+	 * @param monitor  an optional progress monitor to allow cancelation
+	 * @return the reached resources
 	 */
-	public static Set<Resource> getAllTransitiveSubjects(Resource object, Property predicate,
-			ProgressMonitor monitor) {
+	public static Set<Resource> getAllTransitiveSubjects(Resource object, Property predicate, ProgressMonitor monitor) {
 		Set<Resource> set = new HashSet<>();
 		helper.setGraphReadOptimization(true);
 		try {
@@ -400,7 +418,9 @@ public class JenaUtil {
 	
 	/**
 	 * Returns a set of resources reachable from a subject via one or more steps with a given predicate.
-	 * 
+	 * @param subject  the subject to start at
+	 * @param predicate  the predicate to traverse
+	 * @return the reached resources
 	 */
 	public static Set<Resource> getAllTransitiveObjects(Resource subject, Property predicate) {
 		Set<Resource> set = new HashSet<>();
@@ -459,6 +479,58 @@ public class JenaUtil {
 		else {
 			return ModelFactory.createModelForGraph(baseGraph);
 		}
+	}
+
+
+	/**
+	 * For a given subject resource and a given collection of (label/comment) properties this finds the most
+	 * suitable value of either property for a given list of languages (usually from the current user's preferences).
+	 * For example, if the user's languages are [ "en-AU" ] then the function will prefer "mate"@en-AU over
+	 * "friend"@en and never return "freund"@de.  The function falls back to literals that have no language
+	 * if no better literal has been found.
+	 * @param resource  the subject resource
+	 * @param langs  the allowed languages
+	 * @param properties  the properties to check
+	 * @return the best suitable value or null
+	 */
+	public static Literal getBestStringLiteral(Resource resource, List<String> langs, Iterable<Property> properties) {
+		return getBestStringLiteral(resource, langs, properties, (r,p) -> r.listProperties(p));
+	}
+	
+	
+	public static Literal getBestStringLiteral(Resource resource, List<String> langs, Iterable<Property> properties, BiFunction<Resource,Property,Iterator<Statement>> getter) {
+		Literal label = null;
+		int bestLang = -1;
+		for(Property predicate : properties) {
+			Iterator<Statement> it = getter.apply(resource, predicate);
+			while(it.hasNext()) {
+				RDFNode object = it.next().getObject();
+				if(object.isLiteral()) {
+					Literal literal = (Literal)object;
+					String lang = literal.getLanguage();
+					if(lang.length() == 0 && label == null) {
+						label = literal;
+					}
+					else {
+						// 1) Never use a less suitable language
+						// 2) Never replace an already existing label (esp: skos:prefLabel) unless new lang is better
+						// 3) Fall back to more special languages if no other was found (e.g. use en-GB if only "en" is accepted)
+						int startLang = bestLang < 0 ? langs.size() - 1 : (label != null ? bestLang - 1 : bestLang);
+						for(int i = startLang; i >= 0; i--) {
+							String langi = langs.get(i);
+							if(langi.equals(lang)) {
+								label = literal;
+								bestLang = i;
+							}
+							else if(lang.contains("-") && NodeFunctions.langMatches(lang, langi) && label == null) {
+								label = literal;
+							}
+						}
+					}
+				}
+			}
+		}
+		return label;
 	}
 
 
@@ -560,6 +632,7 @@ public class JenaUtil {
 	 * returns a value for a given Function.
 	 * @param cls  the class to start at
 	 * @param function  the Function to execute on each class
+	 * @param <T>  the requested result type
 	 * @return the "first" non-null value, or null
 	 */
 	public static <T> T getNearest(Resource cls, java.util.function.Function<Resource,T> function) {
@@ -624,7 +697,11 @@ public class JenaUtil {
 		}
 	}
 	
-	
+
+	/**
+	 * @deprecated Use equivalent call <code>subject.getPropertyResourceValue(predicate)</code> instead.
+	 * @see Resource#getPropertyResourceValue(Property)
+	 */
 	public static Resource getResourceProperty(Resource subject, Property predicate) {
 		Statement s = subject.getProperty(predicate);
 		if(s != null && s.getObject().isResource()) {
@@ -732,7 +809,10 @@ public class JenaUtil {
 	
 	public static List<Graph> getSubGraphs(MultiUnion union) {
 		List<Graph> results = new LinkedList<>();
-		results.add(union.getBaseGraph());
+		Graph baseGraph = union.getBaseGraph();
+		if(baseGraph != null) {
+			results.add(baseGraph);
+		}
 		results.addAll(union.getSubGraphs());
 		return results;
 	}
@@ -762,7 +842,7 @@ public class JenaUtil {
 	 * @return the type or null
 	 */
 	public static Resource getType(Resource instance) {
-		return getResourceProperty(instance, RDF.type);
+		return instance.getPropertyResourceValue(RDF.type);
 	}
 	
 	
@@ -951,7 +1031,7 @@ public class JenaUtil {
 	/**
 	 * This indicates that no further changes to the model are needed.
 	 * Some implementations may give runtime exceptions if this is violated.
-	 * @param m
+	 * @param m  the Model to get as a read-only variant
 	 * @return A read-only model
 	 */
 	public static Model asReadOnlyModel(Model m) {
@@ -962,7 +1042,7 @@ public class JenaUtil {
 	/**
 	 * This indicates that no further changes to the graph are needed.
 	 * Some implementations may give runtime exceptions if this is violated.
-	 * @param g
+	 * @param g  the Graph to get as a read-only variant
 	 * @return a read-only graph
 	 */
 	public static Graph asReadOnlyGraph(Graph g) {
@@ -985,7 +1065,7 @@ public class JenaUtil {
 	 * 
 	 * Note: Unstable - don't use outside of TopBraid.
 	 * 
-	 * @param onOrOff
+	 * @param onOrOff  true to switch on
 	 */
 	public static void setGraphReadOptimization(boolean onOrOff) {
 		helper.setGraphReadOptimization(onOrOff);
@@ -1044,9 +1124,8 @@ public class JenaUtil {
 	 * @return the result of the function call
 	 */
 	public static Node invokeFunction0(Resource function, Dataset dataset) {
-	    final String expression = "<" + function + ">()";
-	    QuerySolutionMap initialBinding = new QuerySolutionMap();
-	    return invokeExpression(expression, initialBinding, dataset);
+		ExprList args = new ExprList();
+		return invokeFunction(function, args, dataset);
 	}
 
 
@@ -1059,10 +1138,9 @@ public class JenaUtil {
 	 * @return the result of the function call
 	 */
 	public static Node invokeFunction1(Resource function, RDFNode argument, Dataset dataset) {
-	    final String expression = "<" + function + ">(?arg1)";
-	    QuerySolutionMap initialBinding = new QuerySolutionMap();
-	    initialBinding.add("arg1", argument);
-	    return invokeExpression(expression, initialBinding, dataset);
+		ExprList args = new ExprList();
+		args.add(argument != null ? NodeValue.makeNode(argument.asNode()) : new ExprVar("arg1"));
+		return invokeFunction(function, args, dataset);
 	}
 
 
@@ -1081,15 +1159,10 @@ public class JenaUtil {
 	 * @return the result of the function call
 	 */
 	public static Node invokeFunction2(Resource function, RDFNode argument1, RDFNode argument2, Dataset dataset) {
-	    final String expression = "<" + function + ">(?arg1, ?arg2)";
-	    QuerySolutionMap initialBinding = new QuerySolutionMap();
-	    if(argument1 != null) {
-	    	initialBinding.add("arg1", argument1);
-	    }
-	    if(argument2 != null) {
-	    	initialBinding.add("arg2", argument2);
-	    }
-	    return invokeExpression(expression, initialBinding, dataset);
+		ExprList args = new ExprList();
+		args.add(argument1 != null ? NodeValue.makeNode(argument1.asNode()) : new ExprVar("arg1"));
+		args.add(argument2 != null ? NodeValue.makeNode(argument2.asNode()) : new ExprVar("arg2"));
+		return invokeFunction(function, args, dataset);
 	}
 
 
@@ -1099,17 +1172,34 @@ public class JenaUtil {
 
 
 	public static Node invokeFunction3(Resource function, RDFNode argument1, RDFNode argument2, RDFNode argument3, Dataset dataset) {
-		
-	    final String expression = "<" + function + ">(?arg1, ?arg2, ?arg3)";
-	    QuerySolutionMap initialBinding = new QuerySolutionMap();
-	    initialBinding.add("arg1", argument1);
-	    if(argument2 != null) {
-	    	initialBinding.add("arg2", argument2);
+		ExprList args = new ExprList();
+		args.add(argument1 != null ? NodeValue.makeNode(argument1.asNode()) : new ExprVar("arg1"));
+		args.add(argument2 != null ? NodeValue.makeNode(argument2.asNode()) : new ExprVar("arg2"));
+		args.add(argument3 != null ? NodeValue.makeNode(argument3.asNode()) : new ExprVar("arg3"));
+		return invokeFunction(function, args, dataset);
+	}
+	
+	
+	private static Node invokeFunction(Resource function, ExprList args, Dataset dataset) {
+
+		if (dataset == null) {
+	        dataset = ARQFactory.get().getDataset(ModelFactory.createDefaultModel());
 	    }
-		if(argument3 != null) {
-			initialBinding.add("arg3", argument3);
+		
+		E_Function expr = new E_Function(function.getURI(), args);
+		DatasetGraph dsg = dataset.asDatasetGraph();
+		Context cxt = ARQ.getContext().copy();
+		cxt.set(ARQConstants.sysCurrentTime, NodeFactoryExtra.nowAsDateTime());
+		FunctionEnv env = new ExecutionContext(cxt, dsg.getDefaultGraph(), dsg, null);
+		try {
+			NodeValue r = expr.eval(BindingRoot.create(), env);
+			if(r != null) {
+				return r.asNode();
+			}
 		}
-	    return invokeExpression(expression, initialBinding, dataset);
+		catch(ExprEvalException ex) {
+		}
+		return null;
 	}
 
 

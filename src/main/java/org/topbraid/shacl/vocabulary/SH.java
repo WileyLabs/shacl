@@ -39,6 +39,8 @@ public class SH {
 
     public final static Resource AbstractResult = ResourceFactory.createResource(NS + "AbstractResult");
 
+    public final static Resource AndConstraintComponent = ResourceFactory.createResource(NS + "AndConstraintComponent");
+
     public final static Resource BlankNode = ResourceFactory.createResource(NS + "BlankNode");
 
     public final static Resource BlankNodeOrIRI = ResourceFactory.createResource(NS + "BlankNodeOrIRI");
@@ -46,6 +48,8 @@ public class SH {
     public final static Resource BlankNodeOrLiteral = ResourceFactory.createResource(NS + "BlankNodeOrLiteral");
 
     public final static Resource ClassConstraintComponent = ResourceFactory.createResource(NS + "ClassConstraintComponent");
+
+    public final static Resource ClosedConstraintComponent = ResourceFactory.createResource(NS + "ClosedConstraintComponent");
     
     public final static Resource Constraint = ResourceFactory.createResource(NS + "Constraint");
 
@@ -53,19 +57,41 @@ public class SH {
 
     public final static Resource DatatypeConstraintComponent = ResourceFactory.createResource(NS + "DatatypeConstraintComponent");
 
+    public final static Resource DisjointConstraintComponent = ResourceFactory.createResource(NS + "DisjointConstraintComponent");
+
+    public final static Resource EqualsConstraintComponent = ResourceFactory.createResource(NS + "EqualsConstraintComponent");
+
+    public final static Resource HasValueConstraintComponent = ResourceFactory.createResource(NS + "HasValueConstraintComponent");
+
+    public final static Resource InConstraintComponent = ResourceFactory.createResource(NS + "InConstraintComponent");
+
     public final static Resource Info = ResourceFactory.createResource(NS + "Info");
 
     public final static Resource IRI = ResourceFactory.createResource(NS + "IRI");
 
     public final static Resource IRIOrLiteral = ResourceFactory.createResource(NS + "IRIOrLiteral");
 
+    public final static Resource LanguageInConstraintComponent = ResourceFactory.createResource(NS + "LanguageInConstraintComponent");
+
+    public final static Resource LessThanConstraintComponent = ResourceFactory.createResource(NS + "LessThanConstraintComponent");
+
+    public final static Resource LessThanOrEqualsConstraintComponent = ResourceFactory.createResource(NS + "LessThanOrEqualsConstraintComponent");
+
     public final static Resource Literal = ResourceFactory.createResource(NS + "Literal");
 
     public final static Resource MaxCountConstraintComponent = ResourceFactory.createResource(NS + "MaxCountConstraintComponent");
 
+    public final static Resource MaxExclusiveConstraintComponent = ResourceFactory.createResource(NS + "MaxExclusiveConstraintComponent");
+
+    public final static Resource MaxInclusiveConstraintComponent = ResourceFactory.createResource(NS + "MaxInclusiveConstraintComponent");
+
     public final static Resource MaxLengthConstraintComponent = ResourceFactory.createResource(NS + "MaxLengthConstraintComponent");
 
     public final static Resource MinCountConstraintComponent = ResourceFactory.createResource(NS + "MinCountConstraintComponent");
+
+    public final static Resource MinExclusiveConstraintComponent = ResourceFactory.createResource(NS + "MinExclusiveConstraintComponent");
+
+    public final static Resource MinInclusiveConstraintComponent = ResourceFactory.createResource(NS + "MinInclusiveConstraintComponent");
 
     public final static Resource MinLengthConstraintComponent = ResourceFactory.createResource(NS + "MinLengthConstraintComponent");
 
@@ -75,12 +101,16 @@ public class SH {
 
     public final static Resource NodeShape = ResourceFactory.createResource(NS + "NodeShape");
 
+    public final static Resource NotConstraintComponent = ResourceFactory.createResource(NS + "NotConstraintComponent");
+
     public final static Resource OrConstraintComponent = ResourceFactory.createResource(NS + "OrConstraintComponent");
     
     public final static Resource Parameter = ResourceFactory.createResource(NS + "Parameter");
 
     public final static Resource Parameterizable = ResourceFactory.createResource(NS + "Parameterizable");
-    
+
+    public final static Resource PatternConstraintComponent = ResourceFactory.createResource(NS + "PatternConstraintComponent");
+
     public final static Resource PrefixDeclaration = ResourceFactory.createResource(NS + "PrefixDeclaration");
 
     public final static Resource PropertyGroup = ResourceFactory.createResource(NS + "PropertyGroup");
@@ -88,6 +118,10 @@ public class SH {
     public final static Resource PropertyShape = ResourceFactory.createResource(NS + "PropertyShape");
 
     public final static Resource PropertyConstraintComponent = ResourceFactory.createResource(NS + "PropertyConstraintComponent");
+
+    public final static Resource QualifiedMaxCountConstraintComponent = ResourceFactory.createResource(NS + "QualifiedMaxCountConstraintComponent");
+
+    public final static Resource QualifiedMinCountConstraintComponent = ResourceFactory.createResource(NS + "QualifiedMinCountConstraintComponent");
 
     public final static Resource ResultAnnotation = ResourceFactory.createResource(NS + "ResultAnnotation");
 
@@ -110,6 +144,8 @@ public class SH {
     public final static Resource SPARQLTarget = ResourceFactory.createResource(NS + "SPARQLTarget");
     
     public final static Resource SPARQLValuesDeriver = ResourceFactory.createResource(NS + "SPARQLValuesDeriver");
+
+    public final static Resource UniqueLangConstraintComponent = ResourceFactory.createResource(NS + "UniqueLangConstraintComponent");
     
     public final static Resource ValidationReport = ResourceFactory.createResource(NS + "ValidationReport");
     
@@ -121,6 +157,8 @@ public class SH {
 
     public final static Resource Warning = ResourceFactory.createResource(NS + "Warning");
 
+    public final static Resource XoneConstraintComponent = ResourceFactory.createResource(NS + "XoneConstraintComponent");
+
 
     public final static Property alternativePath = ResourceFactory.createProperty(NS + "alternativePath");
     
@@ -129,6 +167,8 @@ public class SH {
     public final static Property ask = ResourceFactory.createProperty(NS + "ask");
 
     public final static Property class_ = ResourceFactory.createProperty(NS + "class");
+    
+    public final static Property closed = ResourceFactory.createProperty(NS + "closed");
 
     public final static Property condition = ResourceFactory.createProperty(NS + "condition");
 
@@ -161,6 +201,8 @@ public class SH {
     public final static Property group = ResourceFactory.createProperty(NS + "group");
 
     public final static Property hasValue = ResourceFactory.createProperty(NS + "hasValue");
+    
+    public final static Property ignoredProperties = ResourceFactory.createProperty(NS + "ignoredProperties");
     
     public final static Property in = ResourceFactory.createProperty(NS + "in");
 
@@ -231,6 +273,8 @@ public class SH {
     public final static Property qualifiedMinCount = ResourceFactory.createProperty(NS + "qualifiedMinCount");
 
     public final static Property qualifiedValueShape = ResourceFactory.createProperty(NS + "qualifiedValueShape");
+
+    public final static Property qualifiedValueShapesDisjoint = ResourceFactory.createProperty(NS + "qualifiedValueShapesDisjoint");
 
     public final static Property result = ResourceFactory.createProperty(NS + "result");
 
@@ -352,8 +396,14 @@ public class SH {
 	public final static Property desc = ResourceFactory.createProperty(NS + "desc");
     
 	public final static Property distinct = ResourceFactory.createProperty(NS + "distinct");
+
+    public final static Property else_ = ResourceFactory.createProperty(NS + "else");
+
+    public final static Property exists = ResourceFactory.createProperty(NS + "exists");
 	
 	public final static Property groupConcat = ResourceFactory.createProperty(NS + "groupConcat");
+
+    public final static Property if_ = ResourceFactory.createProperty(NS + "if");
     
 	public final static Property limit = ResourceFactory.createProperty(NS + "limit");
     
@@ -370,6 +420,8 @@ public class SH {
 	public final static Property separator = ResourceFactory.createProperty(NS + "separator");
     
 	public final static Property sum = ResourceFactory.createProperty(NS + "sum");
+
+    public final static Property then = ResourceFactory.createProperty(NS + "then");
     
 	public final static Property values = ResourceFactory.createProperty(NS + "values");
 

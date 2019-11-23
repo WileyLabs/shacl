@@ -17,7 +17,6 @@
 package org.topbraid.shacl.validation;
 
 import java.net.URI;
-import java.util.UUID;
 
 import org.apache.jena.graph.Graph;
 import org.apache.jena.graph.compose.MultiUnion;
@@ -31,10 +30,19 @@ import org.topbraid.jenax.util.ARQFactory;
 import org.topbraid.shacl.arq.SHACLFunctions;
 import org.topbraid.shacl.engine.ShapesGraph;
 import org.topbraid.shacl.util.SHACLSystemModel;
+import org.topbraid.shacl.util.SHACLUtil;
 import org.topbraid.shacl.vocabulary.TOSH;
 
 /**
  * Convenience methods to perform SHACL validation.
+ * 
+ * These methods are provided for convenience of simple use cases only but are often not the most efficient way
+ * of working with SHACL.  It is typically better to separate the creation of the ShapesGraph object from
+ * the ValidationEngine because the ShapesGraph can be reused across multiple validations, and serves as a "pre-compiled"
+ * data structure that is expensive to rebuild for each run.
+ * 
+ * Having separate calls also provides access to the other functions of the ValidationEngine object, such as
+ * <code>validateNode</code> and <code>getValidationReport</code>.
  * 
  * @author Holger Knublauch
  */
@@ -55,7 +63,7 @@ public class ValidationUtil {
 
 		// Create Dataset that contains both the data model and the shapes model
 		// (here, using a temporary URI for the shapes graph)
-		URI shapesGraphURI = URI.create("urn:x-shacl-shapes-graph:" + UUID.randomUUID().toString());
+		URI shapesGraphURI = SHACLUtil.createRandomShapesGraphURI();
 		Dataset dataset = ARQFactory.get().getDataset(dataModel);
 		dataset.addNamedModel(shapesGraphURI.toString(), shapesModel);
 

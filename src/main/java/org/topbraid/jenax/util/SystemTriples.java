@@ -36,8 +36,6 @@ import org.apache.jena.vocabulary.XSD;
  * 
  * TopBraid and this API adds some extra triples (such as declaring
  * superclasses for each system class) that make life easier.
- * In order to expose those assumptions to 3rd party APIs, this is
- * part of the (open source) SHACL API.
  * 
  * @author Holger Knublauch
  */
@@ -80,7 +78,7 @@ public class SystemTriples {
 			org.topbraid.jenax.util.JenaUtil.initNamespaces(vocabulary.getGraph());
 			vocabulary.setNsPrefix("xsd", XSD.getURI());
 			InputStream ttl = SystemTriples.class.getResourceAsStream("/rdf/system-triples.ttl");
-			vocabulary.read(ttl, "urn:dummy", FileUtils.langTurtle);
+			vocabulary.read(ttl, "urn:x:dummy", FileUtils.langTurtle);
 			ensureSuperClasses(RDFS.Class, RDFS.Resource);
 			ensureSuperClasses(OWL.Class, OWL.Thing);
 			

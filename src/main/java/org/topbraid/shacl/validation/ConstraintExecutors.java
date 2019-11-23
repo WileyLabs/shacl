@@ -20,9 +20,11 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
 
 import org.apache.jena.rdf.model.Resource;
 import org.topbraid.shacl.engine.Constraint;
+import org.topbraid.shacl.validation.java.JavaConstraintExecutors;
 import org.topbraid.shacl.validation.js.JSConstraintExecutor;
 import org.topbraid.shacl.validation.js.JSValidationLanguage;
 import org.topbraid.shacl.validation.sparql.SPARQLConstraintExecutor;
@@ -45,41 +47,18 @@ public class ConstraintExecutors {
 	
 	private List<ValidationLanguage> languages = new ArrayList<>();
 	
-	private Map<Resource,SpecialConstraintExecutorFactory> specialExecutors = new HashMap<>();
+	private Map<Resource,Function<Constraint,ConstraintExecutor>> specialExecutors = new HashMap<>();
 
 	
 	public ConstraintExecutors() {
-		addSpecialExecutor(SH.PropertyConstraintComponent, new AbstractSpecialConstraintExecutorFactory() {
-			@Override
-			public ConstraintExecutor create(Constraint constraint) {
-				return new PropertyConstraintExecutor();
-			}
-		});
-		addSpecialExecutor(DASH.ParameterConstraintComponent, new AbstractSpecialConstraintExecutorFactory() {
-			@Override
-			public ConstraintExecutor create(Constraint constraint) {
-				return new PropertyConstraintExecutor();
-			}
-		});
-		addSpecialExecutor(SH.JSConstraintComponent, new AbstractSpecialConstraintExecutorFactory() {
-			@Override
-			public ConstraintExecutor create(Constraint constraint) {
-				return new JSConstraintExecutor();
-			}
-		});
-		addSpecialExecutor(SH.SPARQLConstraintComponent, new AbstractSpecialConstraintExecutorFactory() {
-			@Override
-			public ConstraintExecutor create(Constraint constraint) {
-				return new SPARQLConstraintExecutor(constraint);
-			}
-		});
-		addSpecialExecutor(SH.ExpressionConstraintComponent, new AbstractSpecialConstraintExecutorFactory() {
-			@Override
-			public ConstraintExecutor create(Constraint constraint) {
-				return new ExpressionConstraintExecutor();
-			}
-		});
-		
+		addSpecialExecutor(SH.PropertyConstraintComponent, constraint -> new PropertyConstraintExecutor());
+		addSpecialExecutor(DASH.ParameterConstraintComponent, constraint -> new PropertyConstraintExecutor());
+		addSpecialExecutor(SH.JSConstraintComponent, constraint -> new JSConstraintExecutor());
+		addSpecialExecutor(SH.SPARQLConstraintComponent, constraint -> new SPARQLConstraintExecutor(constraint));
+		addSpecialExecutor(SH.ExpressionConstraintComponent, constraint -> new ExpressionConstraintExecutor());
+
+		JavaConstraintExecutors.install(this);
+
 		addLanguage(SPARQLValidationLanguage.get());
 		addLanguage(JSValidationLanguage.get());
 	}
@@ -90,16 +69,16 @@ public class ConstraintExecutors {
 	}
 	
 	
-	public void addSpecialExecutor(Resource constraintComponent, SpecialConstraintExecutorFactory executor) {
+	public void addSpecialExecutor(Resource constraintComponent, Function<Constraint,ConstraintExecutor> executor) {
 		specialExecutors.put(constraintComponent, executor);
 	}
 	
 	
 	public ConstraintExecutor getExecutor(Constraint constraint) {
 
-		SpecialConstraintExecutorFactory special = specialExecutors.get(constraint.getComponent());
-		if(special != null && special.canExecute(constraint)) {
-			return special.create(constraint);
+		Function<Constraint,ConstraintExecutor> special = specialExecutors.get(constraint.getComponent());
+		if(special != null) {
+			return special.apply(constraint);
 		}
 		
 		for(ValidationLanguage language : languages) {
@@ -111,6 +90,11 @@ public class ConstraintExecutors {
 		return null;
 	}
 	
+	
+	public void removeSpecialExecutor(Resource constraintComponent) {
+		specialExecutors.remove(constraintComponent);
+	}
+
 	
 	/**
 	 * Can be used to make the JavaScript engine the preferred implementation over SPARQL.

@@ -58,8 +58,8 @@ import org.topbraid.shacl.model.SHPropertyShape;
 import org.topbraid.shacl.model.SHResult;
 import org.topbraid.shacl.optimize.OntologyOptimizations;
 import org.topbraid.shacl.optimize.OptimizedMultiUnion;
-import org.topbraid.shacl.validation.TargetPlugin;
-import org.topbraid.shacl.validation.TargetPlugins;
+import org.topbraid.shacl.targets.CustomTargetLanguage;
+import org.topbraid.shacl.targets.CustomTargets;
 import org.topbraid.shacl.vocabulary.DASH;
 import org.topbraid.shacl.vocabulary.SH;
 import org.topbraid.shacl.vocabulary.TOSH;
@@ -356,8 +356,16 @@ public class SHACLUtil {
 		return null;
 	}
 
-	
+
+	// Simplified to only check for sh:property and sh:parameter (not sh:node etc)
 	public static Resource getResourceDefaultType(Resource resource) {
+		if(resource.getModel().contains(null, SH.property, resource)) {
+			return SH.PropertyShape.inModel(resource.getModel());
+		}
+		else if(resource.getModel().contains(null, SH.parameter, resource)) {
+			return SH.Parameter.inModel(resource.getModel());
+		}
+		/*
 		StmtIterator it = resource.getModel().listStatements(null, null, resource);
 		try {
 			while(it.hasNext()) {
@@ -370,7 +378,7 @@ public class SHACLUtil {
 		}
 		finally {
 			it.close();
-		}
+		}*/
 		return null;
 	}
 	
@@ -439,6 +447,7 @@ public class SHACLUtil {
 	 * Gets all nodes from a given sh:target.
 	 * @param target  the value of sh:target (parameterizable or SPARQL target)
 	 * @param dataset  the dataset to operate on
+	 * @return an Iterable over the resources
 	 */
 	public static Iterable<RDFNode> getResourcesInTarget(Resource target, Dataset dataset) {
 		Resource type = JenaUtil.getType(target);
@@ -451,12 +460,14 @@ public class SHACLUtil {
 		else {
 			executable = target;
 		}
-		TargetPlugin plugin = TargetPlugins.get().getLanguageForTarget(executable);
+		CustomTargetLanguage plugin = CustomTargets.get().getLanguageForTarget(executable);
 		if(plugin != null) {
-			return plugin.executeTarget(dataset, executable, parameterizableTarget);
+			Set<RDFNode> results = new HashSet<>();
+			plugin.createTarget(executable, parameterizableTarget).addTargetNodes(dataset, results);
+			return results;
 		}
 		else {
-			return new ArrayList<RDFNode>();
+			return new ArrayList<>();
 		}
 	}
 	
@@ -731,9 +742,9 @@ public class SHACLUtil {
 			parameterizableTarget = SHFactory.asParameterizableTarget(target);
 			executable = parameterizableTarget.getParameterizable();
 		}
-		TargetPlugin plugin = TargetPlugins.get().getLanguageForTarget(executable);
+		CustomTargetLanguage plugin = CustomTargets.get().getLanguageForTarget(executable);
 		if(plugin != null) {
-			return plugin.isNodeInTarget(focusNode, dataset, executable, parameterizableTarget);
+			return plugin.createTarget(executable, parameterizableTarget).contains(dataset, focusNode);
 		}
 		else {
 			return false;
